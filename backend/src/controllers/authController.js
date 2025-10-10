@@ -24,23 +24,37 @@ async function register(req, res) {
     const user = await User.create({
       email,
       name: name || null,
-      password
+      password,
+      emailVerified: false  // ← Usuario NO verificado al registrarse
     });
     
-    // Enviar email de bienvenida (sin esperar)
-    const emailContent = welcomeEmail(user.name || user.email);
+    // Generar token de verificación
+    const verificationToken = generateResetToken(); // Reutilizamos la función
+    const expiresAt = getTokenExpirationDate(24); // Expira en 24 horas
+    
+    // Guardar token en base de datos
+    await Token.create({
+      token: verificationToken,
+      userId: user.id,
+      expiresAt
+    });
+    
+    // Enviar email de verificación
+    const { verificationEmail } = require('../utils/emailTemplates');
+    const emailContent = verificationEmail(user.name || user.email, verificationToken);
+    
     transporter.sendMail({
       from: process.env.EMAIL_FROM,
       to: user.email,
       subject: emailContent.subject,
       html: emailContent.html
     }).catch(err => {
-      console.error('Error al enviar email de bienvenida:', err);
+      console.error('Error al enviar email de verificación:', err);
       // No bloqueamos el registro si falla el email
     });
     
     res.status(201).json({
-      message: 'Usuario registrado exitosamente',
+      message: 'Usuario registrado exitosamente. Por favor, verifica tu correo electrónico.',
       user: {
         id: user.id,
         email: user.email,
@@ -311,3 +325,4 @@ module.exports = {
   forgotPassword,
   resetPassword
 };
+
