@@ -2,13 +2,21 @@
 ✅ Endpoints Finales de Autenticación
 
 POST   /api/auth/register              - Registrar (envía email de verificación)
+
 POST   /api/auth/verify-email          - Verificar email con token
+
 POST   /api/auth/resend-verification   - Reenviar email de verificación
+
 POST   /api/auth/login                 - Iniciar sesión
+
 POST   /api/auth/logout                - Cerrar sesión (requiere auth)
+
 GET    /api/auth/profile               - Obtener perfil (requiere auth)
+
 POST   /api/auth/forgot-password       - Solicitar recuperación
+
 POST   /api/auth/reset-password        - Restablecer contraseña
+
 
 /*
 ## FLUJO COMPLETO: REGISTRO CON VERIFICACIÓN DE EMAIL
