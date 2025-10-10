@@ -72,7 +72,151 @@ async function register(req, res) {
     });
   }
 }
+// ==================== VERIFICAR EMAIL ====================
+async function verifyEmail(req, res) {
+  try {
+    const { token: verificationToken } = req.body;
+    
+    // Buscar token en base de datos
+    const tokenRecord = await Token.findOne({
+      where: { token: verificationToken },
+      include: [{
+        model: User,
+        as: 'user'
+      }]
+    });
+    
+    // Verificar que el token existe
+    if (!tokenRecord) {
+      return res.status(400).json({
+        error: 'Token de verificación inválido o expirado'
+      });
+    }
+    
+    // Verificar que el token no esté expirado
+    if (tokenRecord.isExpired()) {
+      return res.status(400).json({
+        error: 'El token de verificación ha expirado. Solicita uno nuevo.'
+      });
+    }
+    
+    // Verificar que el token no esté revocado
+    if (tokenRecord.isRevoked()) {
+      return res.status(400).json({
+        error: 'Token ya utilizado'
+      });
+    }
+    
+    const user = tokenRecord.user;
+    
+    // Verificar si el usuario ya está verificado
+    if (user.emailVerified) {
+      return res.status(400).json({
+        error: 'El correo ya ha sido verificado previamente'
+      });
+    }
+    
+    // Marcar usuario como verificado
+    await user.verifyEmail(); // Método del modelo User
+    
+    // Revocar el token de verificación
+    await tokenRecord.revoke();
+    
+    // Enviar email de bienvenida ahora que está verificado
+    const emailContent = welcomeEmail(user.name || user.email);
+    transporter.sendMail({
+      from: process.env.EMAIL_FROM,
+      to: user.email,
+      subject: emailContent.subject,
+      html: emailContent.html
+    }).catch(err => {
+      console.error('Error al enviar email de bienvenida:', err);
+    });
+    
+    res.json({
+      message: 'Correo verificado exitosamente. ¡Ya puedes iniciar sesión!',
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        emailVerified: user.emailVerified,
+        verifiedAt: user.verifiedAt
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error en verify email:', error);
+    res.status(500).json({
+      error: 'Error al verificar correo',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+}
 
+// ==================== REENVIAR EMAIL DE VERIFICACIÓN ====================
+async function resendVerification(req, res) {
+  try {
+    const { email } = req.body;
+    
+    // Buscar usuario
+    const user = await User.findOne({ where: { email } });
+    
+    if (!user) {
+      // Por seguridad, no revelamos si el email existe
+      return res.json({
+        message: 'Si el correo está registrado, recibirás un nuevo email de verificación'
+      });
+    }
+    
+    // Verificar si ya está verificado
+    if (user.emailVerified) {
+      return res.status(400).json({
+        error: 'Este correo ya ha sido verificado'
+      });
+    }
+    
+    // Revocar tokens de verificación anteriores del usuario
+    await Token.destroy({
+      where: {
+        userId: user.id,
+        revokedAt: null
+      }
+    });
+    
+    // Generar nuevo token de verificación
+    const verificationToken = generateResetToken();
+    const expiresAt = getTokenExpirationDate(24);
+    
+    // Guardar nuevo token
+    await Token.create({
+      token: verificationToken,
+      userId: user.id,
+      expiresAt
+    });
+    
+    // Enviar email de verificación
+    const { verificationEmail } = require('../utils/emailTemplates');
+    const emailContent = verificationEmail(user.name || user.email, verificationToken);
+    
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM,
+      to: user.email,
+      subject: emailContent.subject,
+      html: emailContent.html
+    });
+    
+    res.json({
+      message: 'Si el correo está registrado, recibirás un nuevo email de verificación'
+    });
+    
+  } catch (error) {
+    console.error('Error en resend verification:', error);
+    res.status(500).json({
+      error: 'Error al reenviar verificación',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+}
 // ==================== INICIO DE SESIÓN ====================
 async function login(req, res) {
   try {
@@ -324,5 +468,8 @@ module.exports = {
   getProfile,
   forgotPassword,
   resetPassword
+  verifyEmail,        
+  resendVerification  
 };
+
 
