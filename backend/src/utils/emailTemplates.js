@@ -2,30 +2,72 @@
 // PLANTILLAS DE EMAILS
 // ============================================
 
-// ==================== EMAIL DE BIENVENIDA ====================
-function welcomeEmail(userName) {
-    return {
-        subject: '¡Bienvenido a StonkyStonk! 🎉',
-        html: `
+// ==================== EMAIL DE verificacion y bienvenida ====================
+function verificationEmail(userName, verificationToken) {
+  const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email?token=${verificationToken}`;
+  
+  return {
+    subject: 'Verifica tu correo - StonkyStonk',
+    html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h1 style="color: #4ECDC4;">¡Bienvenido a StonkyStonk!</h1>
+        <h1 style="color: #4ECDC4;">¡Bienvenido a StonkyStonk! 🎉</h1>
         <p>Hola ${userName || 'Usuario'},</p>
         <p>Gracias por registrarte en StonkyStonk, tu aplicación de control financiero.</p>
-        <p>Ahora puedes:</p>
+        <p><strong>Para completar tu registro, por favor verifica tu correo electrónico:</strong></p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${verificationUrl}" 
+             style="background-color: #4ECDC4; 
+                    color: white; 
+                    padding: 12px 30px; 
+                    text-decoration: none; 
+                    border-radius: 5px;
+                    display: inline-block;">
+            Verificar Correo
+          </a>
+        </div>
+        <p>O copia y pega este enlace en tu navegador:</p>
+        <p style="word-break: break-all; color: #666;">
+          ${verificationUrl}
+        </p>
+        <p><strong>Este enlace expirará en 24 horas.</strong></p>
+        <p>Una vez verificado, podrás:</p>
         <ul>
           <li>📊 Registrar tus ingresos y gastos</li>
           <li>🎯 Crear metas financieras</li>
           <li>💰 Establecer presupuestos mensuales</li>
           <li>📈 Generar reportes detallados</li>
         </ul>
-        <p>¡Comienza a tomar control de tus finanzas hoy!</p>
         <hr style="border: 1px solid #eee; margin: 20px 0;">
         <p style="color: #666; font-size: 12px;">
           Si no creaste esta cuenta, puedes ignorar este correo.
         </p>
       </div>
     `
-    };
+  };
+}
+
+function welcomeEmail(userName) {
+  return {
+    subject: '¡Tu cuenta ha sido verificada! 🎉',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h1 style="color: #4ECDC4;">¡Cuenta Verificada Exitosamente!</h1>
+        <p>Hola ${userName || 'Usuario'},</p>
+        <p>Tu correo ha sido verificado correctamente. ¡Ya puedes usar todas las funciones de StonkyStonk!</p>
+        <p>Comienza ahora:</p>
+        <ul>
+          <li>📊 Registra tu primera transacción</li>
+          <li>🎯 Crea una meta de ahorro</li>
+          <li>💰 Establece tu presupuesto mensual</li>
+        </ul>
+        <p>¡Toma control de tus finanzas hoy!</p>
+        <hr style="border: 1px solid #eee; margin: 20px 0;">
+        <p style="color: #666; font-size: 12px;">
+          Este es un correo automático, por favor no respondas.
+        </p>
+      </div>
+    `
+  };
 }
 
 // ==================== EMAIL DE RECUPERACIÓN DE CONTRASEÑA ====================
