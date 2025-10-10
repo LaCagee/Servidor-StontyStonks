@@ -5,7 +5,7 @@
 // ==================== EMAIL DE verificacion y bienvenida ====================
 function verificationEmail(userName, verificationToken) {
   const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email?token=${verificationToken}`;
-  
+
   return {
     subject: 'Verifica tu correo - StonkyStonk',
     html: `
@@ -72,11 +72,11 @@ function welcomeEmail(userName) {
 
 // ==================== EMAIL DE RECUPERACIÓN DE CONTRASEÑA ====================
 function resetPasswordEmail(userName, resetToken) {
-    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
+  const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
 
-    return {
-        subject: 'Recuperación de Contraseña - StonkyStonk',
-        html: `
+  return {
+    subject: 'Recuperación de Contraseña - StonkyStonk',
+    html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h1 style="color: #4ECDC4;">Recuperación de Contraseña</h1>
         <p>Hola ${userName || 'Usuario'},</p>
@@ -104,14 +104,14 @@ function resetPasswordEmail(userName, resetToken) {
         </p>
       </div>
     `
-    };
+  };
 }
 
 // ==================== EMAIL DE CONFIRMACIÓN DE CAMBIO DE CONTRASEÑA ====================
 function passwordChangedEmail(userName) {
-    return {
-        subject: 'Tu contraseña ha sido cambiada - StonkyStonk',
-        html: `
+  return {
+    subject: 'Tu contraseña ha sido cambiada - StonkyStonk',
+    html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h1 style="color: #4ECDC4;">Contraseña Actualizada</h1>
         <p>Hola ${userName || 'Usuario'},</p>
@@ -123,13 +123,13 @@ function passwordChangedEmail(userName) {
         </p>
       </div>
     `
-    };
+  };
 }
 
 // ==================== EXPORTAR ====================
 module.exports = {
-    welcomeEmail,
-    verificationEmail,
-    resetPasswordEmail,
-    passwordChangedEmail
+  verificationEmail,
+  welcomeEmail,
+  resetPasswordEmail,
+  passwordChangedEmail
 };

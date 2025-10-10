@@ -10,7 +10,9 @@ const {
   validateRegister,
   validateLogin,
   validateForgotPassword,
-  validateResetPassword
+  validateResetPassword,
+  validateVerifyEmail,
+  validateResendVerification
 } = require('../validators/authValidator');
 
 // ==================== RUTAS PÚBLICAS ====================
@@ -47,6 +49,21 @@ router.post(
   authController.resetPassword
 );
 
+// Verificar email
+router.post(
+  '/verify-email',
+  validateVerifyEmail,
+  authController.verifyEmail
+);
+
+// Reenviar email de verificación
+router.post(
+  '/resend-verification',
+  authLimiter,
+  validateResendVerification,
+  authController.resendVerification
+);
+
 // ==================== RUTAS PROTEGIDAS ====================
 
 // Cerrar sesión (requiere autenticación)
@@ -71,6 +88,8 @@ router.get('/', (req, res) => {
       public: [
         'POST /api/auth/register',
         'POST /api/auth/login',
+        'POST /api/auth/verify-email',
+        'POST /api/auth/resend-verification',
         'POST /api/auth/forgot-password',
         'POST /api/auth/reset-password'
       ],
