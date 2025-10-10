@@ -129,6 +129,7 @@ function passwordChangedEmail(userName) {
 // ==================== EXPORTAR ====================
 module.exports = {
     welcomeEmail,
+    verificationEmail,
     resetPasswordEmail,
     passwordChangedEmail
 };
