@@ -23,9 +23,11 @@ const { DataTypes } = require('sequelize');
 // Importamos cada modelo (los crearemos después)
 const User = require('./User');
 const Token = require('./Token');
+const Category = require('./Category');
 const Transaction = require('./Transaction');
 const Goal = require('./Goal');
 const Budget = require('./Budget');
+
 
 // ============================================
 // DEFINIR RELACIONES (FOREIGN KEYS)
@@ -54,8 +56,18 @@ Transaction.belongsTo(User, {
   foreignKey: 'userId',
   as: 'user'
 });
+// 3. CATEGORY - TRANSACTION (1:N)
+Category.hasMany(Transaction, {
+  foreignKey: 'categoryId',
+  as: 'transactions',
+  onDelete: 'SET NULL'
+});
 
-// 3. USER - GOAL (1:N - Un usuario puede tener muchas metas)
+Transaction.belongsTo(Category, {
+  foreignKey: 'categoryId',
+  as: 'category'
+});
+// 4. USER - GOAL (1:N - Un usuario puede tener muchas metas)
 User.hasMany(Goal, {
   foreignKey: 'userId',
   as: 'goals',
@@ -66,8 +78,18 @@ Goal.belongsTo(User, {
   foreignKey: 'userId',
   as: 'user'
 });
+// 5. CATEGORY - GOAL (1:N)
+Category.hasMany(Goal, {
+  foreignKey: 'categoryId',
+  as: 'goals',
+  onDelete: 'SET NULL'
+});
 
-// 4. USER - BUDGET (1:N - Un usuario puede tener muchos presupuestos)
+Goal.belongsTo(Category, {
+  foreignKey: 'categoryId',
+  as: 'category'
+});
+// 6. USER - BUDGET (1:N - Un usuario puede tener muchos presupuestos)
 User.hasMany(Budget, {
   foreignKey: 'userId',
   as: 'budgets',
@@ -79,6 +101,18 @@ Budget.belongsTo(User, {
   as: 'user'
 });
 
+// 7. CATEGORY - BUDGET (1:N)
+Category.hasMany(Budget, {
+  foreignKey: 'categoryId',
+  as: 'budgets',
+  onDelete: 'RESTRICT'  // No permite borrar categoría si tiene presupuestos activos
+});
+
+Budget.belongsTo(Category, {
+  foreignKey: 'categoryId',
+  as: 'category'
+});
+
 // ============================================
 // EXPORTAR MODELOS Y SEQUELIZE
 // ============================================
@@ -86,6 +120,7 @@ module.exports = {
   sequelize,      // Instancia de Sequelize (para sync, authenticate, etc.)
   User,
   Token,
+  Category,
   Transaction,
   Goal,
   Budget

@@ -158,15 +158,16 @@ const Budget = sequelize.define('Budget', {
         comment: 'ID del usuario dueño del presupuesto'
     },
 
-    category: {
-        type: DataTypes.STRING(50),
+    categoryId: {
+        type: DataTypes.INTEGER,
         allowNull: false,
-        validate: {
-            notEmpty: {
-                msg: 'La categoría no puede estar vacía'
-            }
+        field: 'category_id',
+        references: {
+            model: 'categories',
+            key: 'id'
         },
-        comment: 'Categoría del presupuesto (Alimentación, Transporte, etc.)'
+        onDelete: 'RESTRICT',
+        comment: 'ID de la categoría del presupuesto'
     },
 
     monthlyLimit: {
@@ -270,7 +271,7 @@ const Budget = sequelize.define('Budget', {
             fields: ['user_id']
         },
         {
-            fields: ['category']
+            fields: ['category_id']
         },
         {
             fields: ['month', 'year']
@@ -281,7 +282,7 @@ const Budget = sequelize.define('Budget', {
         {
             // Evitar presupuestos duplicados (misma categoría en el mismo mes/año)
             unique: true,
-            fields: ['user_id', 'category', 'month', 'year'],
+            fields: ['user_id', 'category_id', 'month', 'year'],
             name: 'unique_budget_per_category_month'
         }
     ]
@@ -294,14 +295,13 @@ Budget.prototype.calculateSpent = async function () {
     const Transaction = require('./Transaction');
     const { Op } = require('sequelize');
 
-    // Obtener primer y último día del mes
     const startDate = new Date(this.year, this.month - 1, 1);
     const endDate = new Date(this.year, this.month, 0);
 
     const currentSpent = await Transaction.sum('amount', {
         where: {
             userId: this.userId,
-            category: this.category,
+            categoryId: this.categoryId,
             type: 'expense',
             isActive: true,
             date: {
@@ -374,13 +374,20 @@ Budget.prototype.getProjectedSpending = async function () {
 
 // Obtener información completa del presupuesto
 Budget.prototype.getFullInfo = async function () {
+    const Category = require('./Category');
     const spent = await this.calculateSpent();
     const projection = await this.getProjectedSpending();
     const daysRemaining = this.getDaysRemainingInMonth();
 
+    // Obtener información de la categoría
+    const category = await Category.findByPk(this.categoryId, {
+        attributes: ['id', 'name', 'icon', 'color']
+    });
+
     return {
         id: this.id,
-        category: this.category,
+        categoryId: this.categoryId,
+        category,
         monthlyLimit: this.monthlyLimit,
         alertThreshold: this.alertThreshold,
         month: this.month,
@@ -518,7 +525,7 @@ Budget.createNextMonthBudgets = async function (userId) {
     for (const budget of currentBudgets) {
         const newBudget = await this.create({
             userId: budget.userId,
-            category: budget.category,
+            categoryId: budget.categoryId,
             monthlyLimit: budget.monthlyLimit,
             alertThreshold: budget.alertThreshold,
             month: nextMonth,

@@ -163,10 +163,16 @@ const Goal = sequelize.define('Goal', {
         comment: 'Fecha límite para alcanzar la meta (opcional)'
     },
 
-    category: {
-        type: DataTypes.STRING(50),
+    categoryId: {
+        type: DataTypes.INTEGER,
         allowNull: true,
-        comment: 'Categoría asociada a la meta (ej: Viaje, Auto, Casa)'
+        field: 'category_id',
+        references: {
+            model: 'categories',
+            key: 'id'
+        },
+        onDelete: 'SET NULL',
+        comment: 'ID de la categoría asociada (opcional)'
     },
 
     status: {
@@ -235,8 +241,8 @@ Goal.prototype.calculateProgress = async function () {
         isActive: true
     };
 
-    if (this.category) {
-        whereClause.category = this.category;
+    if (this.categoryId) {
+        whereClause.categoryId = this.categoryId;
     }
 
     const currentAmount = await Transaction.sum('amount', {
@@ -310,15 +316,25 @@ Goal.prototype.cancel = async function () {
 
 // Obtener información completa (con progreso)
 Goal.prototype.getFullInfo = async function () {
+    const Category = require('./Category');  
     const progress = await this.calculateProgress();
     const daysRemaining = this.getDaysRemaining();
+
+    // Obtener información de la categoría si existe
+    let category = null;
+    if (this.categoryId) {
+        category = await Category.findByPk(this.categoryId, {
+            attributes: ['id', 'name', 'icon', 'color']
+        });
+    }
 
     return {
         id: this.id,
         name: this.name,
         description: this.description,
         targetAmount: this.targetAmount,
-        category: this.category,
+        categoryId: this.categoryId,  
+        category,  // ← AGREGAR: objeto completo de categoría
         deadline: this.deadline,
         status: this.status,
         progress,

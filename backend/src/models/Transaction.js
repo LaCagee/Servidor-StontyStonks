@@ -187,16 +187,16 @@ const Transaction = sequelize.define('Transaction', {
     comment: 'Descripción opcional de la transacción'
   },
 
-  category: {
-    type: DataTypes.STRING(50),
-    allowNull: false,
-    defaultValue: 'Otros',
-    validate: {
-      notEmpty: {
-        msg: 'La categoría no puede estar vacía'
-      }
+  categoryId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    field: 'category_id',
+    references: {
+      model: 'categories',
+      key: 'id'
     },
-    comment: 'Categoría de la transacción (Alimentación, Transporte, etc.)'
+    onDelete: 'SET NULL',
+    comment: 'ID de la categoría asociada'
   },
 
   tags: {
@@ -252,7 +252,7 @@ const Transaction = sequelize.define('Transaction', {
       fields: ['date']
     },
     {
-      fields: ['category']
+      fields: ['category_id']
     },
     {
       fields: ['type']
@@ -358,13 +358,20 @@ Transaction.getBalance = async function (userId) {
 };
 
 // Obtener transacciones por categoría
-Transaction.getByCategory = async function (userId, category) {
+Transaction.getByCategory = async function (userId, categoryId) {
+  const Category = require('./Category');
+
   return await this.findAll({
     where: {
       userId,
-      category,
+      categoryId,
       isActive: true
     },
+    include: [{
+      model: Category,
+      as: 'category',
+      attributes: ['id', 'name', 'icon', 'color']
+    }],
     order: [['date', 'DESC']]
   });
 };
@@ -397,13 +404,14 @@ Transaction.getCurrentMonth = async function (userId) {
 // Obtener resumen por categoría
 Transaction.getSummaryByCategory = async function (userId, startDate, endDate) {
   const { Op } = require('sequelize');
+  const Category = require('./Category');
 
   return await this.findAll({
     attributes: [
-      'category',
+      'categoryId',
       'type',
       [sequelize.fn('SUM', sequelize.col('amount')), 'total'],
-      [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+      [sequelize.fn('COUNT', sequelize.col('Transaction.id')), 'count']
     ],
     where: {
       userId,
@@ -412,7 +420,12 @@ Transaction.getSummaryByCategory = async function (userId, startDate, endDate) {
       },
       isActive: true
     },
-    group: ['category', 'type'],
+    include: [{
+      model: Category,
+      as: 'category',
+      attributes: ['id', 'name', 'icon', 'color']
+    }],
+    group: ['categoryId', 'type', 'category.id', 'category.name', 'category.icon', 'category.color'],
     order: [[sequelize.literal('total'), 'DESC']]
   });
 };

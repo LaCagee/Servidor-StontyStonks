@@ -1,6 +1,7 @@
 require('dotenv').config();
 const app = require('./src/app');
 const sequelize = require('./src/config/database');
+const { User, Token, Transaction, Goal, Budget, Category } = require('./src/models'); // ← IMPORTAR MODELOS para Prueba de Sincronización
 
 const PORT = process.env.PORT || 3000;
 
@@ -13,8 +14,30 @@ async function startServer() {
 
     // Sincronizar modelos (solo en desarrollo)
     if (process.env.NODE_ENV === 'development') {
-      await sequelize.sync({ alter: true });
+      //await sequelize.sync({ alter: true }); // Alternativa: ajusta tablas sin perder datos
+      await sequelize.sync(); 
+
       console.log('✅ Modelos sincronizados con la base de datos');
+      // ========== PRUEBA DE MODELOS (TEMPORAL) ==========
+      console.log('\n🧪 Probando modelos...\n');
+      await Category.createSystemCategories(); 
+      // Contar registros existentes
+      const userCount = await User.count();
+      const tokenCount = await Token.count();
+      const transactionCount = await Transaction.count();
+      const goalCount = await Goal.count();
+      const budgetCount = await Budget.count();
+      const categoryCount = await Category.count();
+      
+      console.log(`📊 Usuarios: ${userCount}`);
+      console.log(`📊 Tokens: ${tokenCount}`);
+      console.log(`📊 Transacciones: ${transactionCount}`);
+      console.log(`📊 Metas: ${goalCount}`);
+      console.log(`📊 Presupuestos: ${budgetCount}`);
+      console.log(`📊 Categorias: ${categoryCount}`);
+      
+      console.log('\n✅ Todos los modelos funcionan correctamente\n');
+      // ==================================================
     }
 
     // Iniciar servidor
