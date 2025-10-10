@@ -18,7 +18,6 @@ POST   /api/auth/forgot-password       - Solicitar recuperación
 POST   /api/auth/reset-password        - Restablecer contraseña
 
 
-/*
 ## FLUJO COMPLETO: REGISTRO CON VERIFICACIÓN DE EMAIL
 
 1. Usuario se registra
@@ -83,4 +82,3 @@ CASO ESPECIAL: Token expirado
    }
    ↓
    Sistema genera NUEVO token y reenvía email
-*/
