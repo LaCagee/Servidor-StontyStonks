@@ -1,19 +1,85 @@
+// ============================================
+// RUTAS DE AUTENTICACIÓN
+// ============================================
 const express = require('express');
 const router = express.Router();
+const authController = require('../controllers/authController');
+const authMiddleware = require('../middlewares/authMiddleware');
 const { authLimiter } = require('../middlewares/rateLimiter');
-// const authController = require('../controllers/authController');
+const {
+  validateRegister,
+  validateLogin,
+  validateForgotPassword,
+  validateResetPassword
+} = require('../validators/authValidator');
 
-// Aplicar rate limiting a rutas de autenticación
-router.use(authLimiter);
+// ==================== RUTAS PÚBLICAS ====================
 
-// TODO: Implementar en A.2
-// router.post('/register', authController.register);
-// router.post('/login', authController.login);
-// router.post('/logout', authController.logout);
+// Registro de usuario
+router.post(
+  '/register',
+  authLimiter,           // Rate limiting
+  validateRegister,      // Validación
+  authController.register
+);
 
-// Ruta temporal de prueba
+// Inicio de sesión
+router.post(
+  '/login',
+  authLimiter,
+  validateLogin,
+  authController.login
+);
+
+// Solicitar recuperación de contraseña
+router.post(
+  '/forgot-password',
+  authLimiter,
+  validateForgotPassword,
+  authController.forgotPassword
+);
+
+// Restablecer contraseña
+router.post(
+  '/reset-password',
+  authLimiter,
+  validateResetPassword,
+  authController.resetPassword
+);
+
+// ==================== RUTAS PROTEGIDAS ====================
+
+// Cerrar sesión (requiere autenticación)
+router.post(
+  '/logout',
+  authMiddleware,
+  authController.logout
+);
+
+// Obtener perfil del usuario (requiere autenticación)
+router.get(
+  '/profile',
+  authMiddleware,
+  authController.getProfile
+);
+
+// ==================== RUTA DE PRUEBA ====================
 router.get('/', (req, res) => {
-  res.json({ message: 'Auth routes - Coming soon' });
+  res.json({
+    message: 'Auth API - StonkyStonk',
+    endpoints: {
+      public: [
+        'POST /api/auth/register',
+        'POST /api/auth/login',
+        'POST /api/auth/forgot-password',
+        'POST /api/auth/reset-password'
+      ],
+      protected: [
+        'POST /api/auth/logout (requiere token)',
+        'GET /api/auth/profile (requiere token)'
+      ]
+    }
+  });
 });
 
 module.exports = router;
