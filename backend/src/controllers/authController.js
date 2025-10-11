@@ -31,7 +31,9 @@ async function register(req, res) {
     // Generar token de verificación
     const verificationToken = generateResetToken(); // Reutilizamos la función
     const expiresAt = getTokenExpirationDate(24); // Expira en 24 horas
+      console.log("===========================TOKEN DE VERIFICACIÓN===================================");
       console.log(`Token de verificación para ${user.email}: ` + verificationToken); // borrar en producción, simplemente se uso para usar el token en postman para pruebas
+      console.log("==============================================================");
     // Guardar token en base de datos
     await Token.create({
       token: verificationToken,
