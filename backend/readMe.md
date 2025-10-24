@@ -77,33 +77,164 @@ CASO ESPECIAL: Token expirado
    Sistema genera NUEVO token y reenvía email
 */
 
-# Plan de acción para CRUD de transacciones 
-
-- Rutas (routes/transactions.js)
-- POST /api/transactions → Crear transacción (ingreso o gasto)
-- GET /api/transactions → Listar transacciones del usuario
-- GET /api/transactions/:id → Obtener transacción específica del usuario
-- PUT /api/transactions/:id → Actualizar transacción (solo del usuario)
-- DELETE /api/transactions/:id → Soft delete (usuario solo la suya)
-- POST /api/transactions/:id/restore → Restaurar transacción eliminada
-
-## Controlador (controllers/transactionController.js)
-
-- Validar userId contra el token del usuario autenticado (middleware de auth)
-- Validar categoría (Category) al crear o actualizar transacción
-- Usar métodos del modelo Transaction (softDelete(), restore(), getSignedAmount(), etc.)
-
-## Middleware de autenticación
-
-- Garantizar que req.user.id esté disponible (desde JWT)
-- Todas las operaciones deben filtrar por userId
-
-## Integración con categorías
-
-- Incluir info de categoría al listar transacciones (include: Category)
-- Validar que la categoría sea activa y compatible con type al crear/editar
-
 ## Resúmenes y cálculos
 
 - Opcional: endpoints para balance (Transaction.getBalance(userId))
 - Resumen por categoría (Transaction.getSummaryByCategory(userId, startDate, endDate))
+
+
+
+---------------------------------------------------------------------------------------------------
+| Método | Ruta                              | Descripción                                        |
+| ------ | --------------------------------- | -------------------------------------------------- |
+| POST   | `/api/transactions`               | Crear nueva transacción (ingreso o gasto)          |
+| GET    | `/api/transactions`               | Listar todas las transacciones activas del usuario |
+| GET    | `/api/transactions/:id`           | Obtener detalle de una transacción específica      |
+| PUT    | `/api/transactions/:id`           | Actualizar transacción existente                   |
+| DELETE | `/api/transactions/:id`           | Soft delete (marcar como eliminada)                |
+| POST   | `/api/transactions/:id/restore`   | Restaurar transacción eliminada                    |
+| DELETE | `/api/transactions/:id/permanent` | Eliminar permanentemente (no recomendado)          |
+---------------------------------------------------------------------------------------------------
+
+## 🔄 Flujo Completo de Transacciones
+
+/*
+FLUJO COMPLETO DE UNA TRANSACCIÓN:
+
+1. Usuario registra un gasto/ingreso desde el frontend
+   ↓
+2. POST /api/transactions con datos:
+   Headers: Authorization: Bearer <JWT>
+   Body:
+   {
+      "amount": 50000,
+      "type": "expense",
+      "date": "2025-10-08",
+      "description": "Compra supermercado",
+      "categoryId": 1,
+      "tags": ["super", "comida"]
+   }
+   Proceso:
+      + Backend verifica que el usuario esté autenticado (authMiddleware).
+      + Valida campos obligatorios (amount, type, date).
+      + Crea registro en transactions con isActive=true.
+      + Asocia categoryId al ID enviado por el frontend.
+   ↓
+3. Se guarda en tabla transactions:
+   ┌────────────────────────────────────────────┐
+   │ id: 1                                      │
+   │ user_id: 1                                 │
+   │ amount: 50000.00                           │
+   │ type: expense                              │
+   │ date: 2025-10-08                           │
+   │ description: Compra supermercado           │
+   │ category_id: 1                             │
+   │ tags: ["super","comida"]                   │
+   │ is_active: true                            │
+   │ deleted_at: null                           │
+   │ category_source: manual                    │
+   │ created_at: 2025-10-08T15:30:00Z           │
+   │ updated_at: 2025-10-08T15:30:00Z           │
+   └────────────────────────────────────────────┘
+   ↓
+4. Usuario ve la transacción en el dashboard
+   GET /api/transactions → Lista todas las activas
+   Headers: Authorization: Bearer <JWT>
+   Proceso:
+      + Solo devuelve transacciones con userId del usuario actual y isActive=true.
+   ↓
+5a. Usuario EDITA la transacción:
+    PUT /api/transactions/1
+   Headers: Authorization: Bearer <JWT>
+   Body:
+   {
+      "amount": 55000,
+      "description": "Compra supermercado (corregido)",
+      "tags": ["super","comida","urgente"]
+   }
+   Proceso:
+      + Solo el dueño puede actualizar.
+      + updated_at se actualiza automáticamente.
+      + categoryId también puede actualizarse si el usuario cambia la categoría.
+    
+5b. Usuario ELIMINA (soft delete):
+    DELETE /api/transactions/1
+   Headers: Authorization: Bearer <JWT>
+   
+   Proceso:
+      + Cambia isActive=false y deletedAt=NOW().
+      + Ya no aparece en listados normales (GET /api/transactions).
+   
+   Registro modificado en BD:
+   →is_active: false
+   →deleted_at: 2025-10-08T16:00:00Z
+
+    
+5c. Usuario RESTAURA transacción eliminada:
+    POST /api/transactions/1/restore
+    Headers: Authorization: Bearer <JWT>
+   Proceso:
+    → is_active = true
+    → deleted_at = null
+    → Vuelve a aparecer en listados normales
+    
+5d. Usuario ELIMINA PERMANENTE:
+    DELETE /api/transactions/1/permanent
+    Headers: Authorization: Bearer <JWT>
+
+    Proceso:
+      + Elimina completamente el registro de la base de datos.
+
+6. Cálculos automáticos:
+   ┌──────────────────────────────────────┐
+   │ Transaction.getBalance(userId: 1)    │
+   │                                      │
+   │ Income:  $100,000                    │
+   │ Expense:  $50,000                    │
+   │ Balance:  $50,000                    │
+   └──────────────────────────────────────┘
+   
+7. Reportes y análisis:
+   ┌──────────────────────────────────────────────┐
+   │ Transaction.getSummaryByCategory()           │
+   │                                              │
+   │ Alimentación: $50,000 (15 transacciones)     │
+   │ Transporte:   $20,000 (8 transacciones)      │
+   │ Salud:        $10,000 (3 transacciones)      │
+   └──────────────────────────────────────────────┘
+
+MÉTODOS ÚTILES:
+
+// Verificar tipo
+transaction.isIncome()   → false (es expense)
+transaction.isExpense()  → true
+
+// Obtener monto con signo (para calcular balance)
+transaction.getSignedAmount()  → -50000 (negativo porque es gasto)
+
+// Soft delete
+transaction.softDelete()  → is_active=false, deleted_at=NOW()
+
+// Restaurar
+transaction.restore()  → is_active=true, deleted_at=null
+
+CONSULTAS COMUNES:
+
+// Solo gastos activos
+Transaction.scope('expense').findAll()
+
+// Solo ingresos activos  
+Transaction.scope('income').findAll()
+
+// Balance del usuario
+const balance = await Transaction.getBalance(userId)
+
+// Transacciones del mes actual
+const thisMonth = await Transaction.getCurrentMonth(userId)
+
+// Buscar por descripción
+const results = await Transaction.searchByDescription(userId, "super")
+
+// Resumen por categoría
+const summary = await Transaction.getSummaryByCategory(userId, startDate, endDate)
+*/
