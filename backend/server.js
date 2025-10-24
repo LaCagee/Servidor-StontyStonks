@@ -15,12 +15,12 @@ async function startServer() {
     // Sincronizar modelos (solo en desarrollo)
     if (process.env.NODE_ENV === 'development') {
       //await sequelize.sync({ alter: true }); // Alternativa: ajusta tablas sin perder datos
-      await sequelize.sync(); 
+      await sequelize.sync();
 
       console.log('✅ Modelos sincronizados con la base de datos');
       // ========== PRUEBA DE MODELOS (TEMPORAL) ==========
       console.log('\n🧪 Probando modelos...\n');
-      await Category.createSystemCategories(); 
+      await Category.createSystemCategories();
       // Contar registros existentes
       const userCount = await User.count();
       const tokenCount = await Token.count();
@@ -28,14 +28,14 @@ async function startServer() {
       const goalCount = await Goal.count();
       const budgetCount = await Budget.count();
       const categoryCount = await Category.count();
-      
+
       console.log(`📊 Usuarios: ${userCount}`);
       console.log(`📊 Tokens: ${tokenCount}`);
       console.log(`📊 Transacciones: ${transactionCount}`);
       console.log(`📊 Metas: ${goalCount}`);
       console.log(`📊 Presupuestos: ${budgetCount}`);
       console.log(`📊 Categorias: ${categoryCount}`);
-      
+
       console.log('\n✅ Todos los modelos funcionan correctamente\n');
       // ==================================================
     }
@@ -44,6 +44,10 @@ async function startServer() {
     app.listen(PORT, () => {
       console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
       console.log(`📊 Ambiente: ${process.env.NODE_ENV}`);
+
+      // 🔹 Iniciar job de limpieza de tokens expirados
+      const startTokenCleanupJob = require('./src/jobs/JobLimpiezaTokens');
+      startTokenCleanupJob();
     });
   } catch (error) {
     console.error('❌ Error al iniciar el servidor:', error);
