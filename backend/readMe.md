@@ -77,13 +77,7 @@ CASO ESPECIAL: Token expirado
    Sistema genera NUEVO token y reenvía email
 */
 
-## Resúmenes y cálculos
-
-- Opcional: endpoints para balance (Transaction.getBalance(userId))
-- Resumen por categoría (Transaction.getSummaryByCategory(userId, startDate, endDate))
-
-
-
+## 🔄 Flujo Completo de Transacciones
 ---------------------------------------------------------------------------------------------------
 | Método | Ruta                              | Descripción                                        |
 | ------ | --------------------------------- | -------------------------------------------------- |
@@ -95,8 +89,6 @@ CASO ESPECIAL: Token expirado
 | POST   | `/api/transactions/:id/restore`   | Restaurar transacción eliminada                    |
 | DELETE | `/api/transactions/:id/permanent` | Eliminar permanentemente (no recomendado)          |
 ---------------------------------------------------------------------------------------------------
-
-## 🔄 Flujo Completo de Transacciones
 
 /*
 FLUJO COMPLETO DE UNA TRANSACCIÓN:
