@@ -76,3 +76,56 @@ CASO ESPECIAL: Token expirado
    ↓
    Sistema genera NUEVO token y reenvía email
 */
+
+
+
+## Como hacer el Job para la eliminacion de tokens expirados
+
+1. Descargar binarios de pg_cron desde: https://github.com/citusdata/pg_cron/releases
+2. Copiar archivos .dll a la carpeta de PostgreSQL
+3. Editar postgresql.conf
+4. Reiniciar PostgreSQL
+
+** Información Clave **
+----------------------------------------------------------------------------
+ Ubicación del archivo:                   
+
+Windows: C:\Program Files\PostgreSQL\[version]\data\postgresql.conf
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+-- Conectar a tu base de datos
+\c stonkystonk
+
+-- Crear la extensión (requiere superusuario)
+CREATE EXTENSION pg_cron;
+
+-- Verificar que se instaló
+\dx
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+
+Implementación con pg_cron
+
+-- 1. Crear función de limpieza
+CREATE OR REPLACE FUNCTION cleanup_expired_tokens()
+RETURNS void AS $$
+BEGIN
+  DELETE FROM tokens
+  WHERE expires_at < NOW();
+END;
+$$ LANGUAGE plpgsql;
+
+-- 2. Programar job cada 15 minutos
+SELECT cron.schedule(
+  'cleanup-tokens',       -- Nombre del job
+  '*/15 * * * *',        -- Cada 15 minutos
+  'SELECT cleanup_expired_tokens();'
+);
+
+-- 3. Ver jobs programados
+SELECT * FROM cron.job;
+
+-- 4. Ver historial de ejecución
+SELECT * FROM cron.job_run_details ORDER BY start_time DESC LIMIT 10;
+
+----------------------------------------------------------------------------
