@@ -77,55 +77,33 @@ CASO ESPECIAL: Token expirado
    Sistema genera NUEVO token y reenvía email
 */
 
+# Plan de acción para CRUD de transacciones 
 
+- Rutas (routes/transactions.js)
+- POST /api/transactions → Crear transacción (ingreso o gasto)
+- GET /api/transactions → Listar transacciones del usuario
+- GET /api/transactions/:id → Obtener transacción específica del usuario
+- PUT /api/transactions/:id → Actualizar transacción (solo del usuario)
+- DELETE /api/transactions/:id → Soft delete (usuario solo la suya)
+- POST /api/transactions/:id/restore → Restaurar transacción eliminada
 
-## Como hacer el Job para la eliminacion de tokens expirados
+## Controlador (controllers/transactionController.js)
 
-1. Descargar binarios de pg_cron desde: https://github.com/citusdata/pg_cron/releases
-2. Copiar archivos .dll a la carpeta de PostgreSQL
-3. Editar postgresql.conf
-4. Reiniciar PostgreSQL
+- Validar userId contra el token del usuario autenticado (middleware de auth)
+- Validar categoría (Category) al crear o actualizar transacción
+- Usar métodos del modelo Transaction (softDelete(), restore(), getSignedAmount(), etc.)
 
-** Información Clave **
-----------------------------------------------------------------------------
- Ubicación del archivo:                   
+## Middleware de autenticación
 
-Windows: C:\Program Files\PostgreSQL\[version]\data\postgresql.conf
-----------------------------------------------------------------------------
-----------------------------------------------------------------------------
--- Conectar a tu base de datos
-\c stonkystonk
+- Garantizar que req.user.id esté disponible (desde JWT)
+- Todas las operaciones deben filtrar por userId
 
--- Crear la extensión (requiere superusuario)
-CREATE EXTENSION pg_cron;
+## Integración con categorías
 
--- Verificar que se instaló
-\dx
-----------------------------------------------------------------------------
-----------------------------------------------------------------------------
+- Incluir info de categoría al listar transacciones (include: Category)
+- Validar que la categoría sea activa y compatible con type al crear/editar
 
-Implementación con pg_cron
+## Resúmenes y cálculos
 
--- 1. Crear función de limpieza
-CREATE OR REPLACE FUNCTION cleanup_expired_tokens()
-RETURNS void AS $$
-BEGIN
-  DELETE FROM tokens
-  WHERE expires_at < NOW();
-END;
-$$ LANGUAGE plpgsql;
-
--- 2. Programar job cada 15 minutos
-SELECT cron.schedule(
-  'cleanup-tokens',       -- Nombre del job
-  '*/15 * * * *',        -- Cada 15 minutos
-  'SELECT cleanup_expired_tokens();'
-);
-
--- 3. Ver jobs programados
-SELECT * FROM cron.job;
-
--- 4. Ver historial de ejecución
-SELECT * FROM cron.job_run_details ORDER BY start_time DESC LIMIT 10;
-
-----------------------------------------------------------------------------
+- Opcional: endpoints para balance (Transaction.getBalance(userId))
+- Resumen por categoría (Transaction.getSummaryByCategory(userId, startDate, endDate))
