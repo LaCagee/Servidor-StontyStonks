@@ -9,11 +9,15 @@ router.use(apiLimiter);
 const authRoutes = require('./authRoutes');
 const userRoutes = require('./userRoutes');
 const transactionRoutes = require('./transactionRoutes');
+const categoryRoutes = require('./categoryRoutes');
+const dashboardRoutes = require('./dashboardRoutes');
 
 // Usar rutas
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/transactions', transactionRoutes);
+router.use('/categories', categoryRoutes);
+router.use('/dashboard', dashboardRoutes);
 
 // Ruta de prueba
 router.get('/', (req, res) => {
@@ -22,7 +26,9 @@ router.get('/', (req, res) => {
     endpoints: {
       auth: '/api/auth',
       users: '/api/users',
-      transactions: '/api/transactions'
+      transactions: '/api/transactions',
+      categories: '/api/categories',
+      dashboard: '/api/dashboard'
     }
   });
 });
