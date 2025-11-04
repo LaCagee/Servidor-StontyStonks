@@ -8,35 +8,36 @@ const { Op } = require('sequelize');
 exports.createTransaction = async (req, res) => {
   try {
     const { amount, type, date, description, categoryId, tags } = req.body;
-    const userId = req.userId;  // ← Cambio: usar req.userId del middleware
+    const userId = req.userId;
 
     // Validar que la categoría exista y sea del tipo correcto
     const category = await Category.findByPk(categoryId);
-    
+
     if (!category) {
       return res.status(400).json({ error: 'Categoría no encontrada' });
     }
-    
+
     if (!category.isActive) {
       return res.status(400).json({ error: 'Categoría no disponible' });
     }
-    
+
     if (category.type !== 'both' && category.type !== type) {
-      return res.status(400).json({ 
-        error: `La categoría "${category.name}" es para ${category.type === 'income' ? 'ingresos' : 'gastos'}, no para ${type === 'income' ? 'ingresos' : 'gastos'}` 
+      return res.status(400).json({
+        error: `La categoría "${category.name}" es para ${category.type === 'income' ? 'ingresos' : 'gastos'}, no para ${type === 'income' ? 'ingresos' : 'gastos'}`
       });
     }
-
+    // Asignar fuente de categoría, si viene vacia asignar 'manual' sino usar la proporcionada
+    const categorySource = req.body.categorySource || 'manual';
     // Crear transacción
     const transaction = await Transaction.create({
       userId,
       amount,
       type,
-      date: date || new Date(),  // ← Si no envía fecha, usar hoy
+      date: date || new Date(),
       description: description || null,
       categoryId,
       tags: tags || [],
-      categorySource: 'manual'
+      categorySource: categorySource // Asignar la fuente de categoría
     });
 
     // Obtener transacción completa con categoría
@@ -48,14 +49,14 @@ exports.createTransaction = async (req, res) => {
       }]
     });
 
-    return res.status(201).json({ 
-      message: 'Transacción creada exitosamente', 
-      transaction: transactionWithCategory 
+    return res.status(201).json({
+      message: 'Transacción creada exitosamente',
+      transaction: transactionWithCategory
     });
-    
+
   } catch (error) {
     console.error('Error al crear transacción:', error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Error al crear la transacción',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -68,14 +69,14 @@ exports.createTransaction = async (req, res) => {
 exports.getAllTransactions = async (req, res) => {
   try {
     const userId = req.userId;
-    const { 
-      categoryId, 
-      type, 
-      startDate, 
-      endDate, 
+    const {
+      categoryId,
+      type,
+      startDate,
+      endDate,
       search,
       page = 1,
-      limit = 50 
+      limit = 50
     } = req.query;
 
     // Construir filtros dinámicamente
@@ -127,7 +128,7 @@ exports.getAllTransactions = async (req, res) => {
     // Calcular páginas totales
     const totalPages = Math.ceil(count / limit);
 
-    return res.status(200).json({ 
+    return res.status(200).json({
       transactions,
       pagination: {
         total: count,
@@ -137,10 +138,10 @@ exports.getAllTransactions = async (req, res) => {
         hasMore: page < totalPages
       }
     });
-    
+
   } catch (error) {
     console.error('Error al obtener transacciones:', error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Error al obtener transacciones',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -169,10 +170,10 @@ exports.getTransactionById = async (req, res) => {
     }
 
     return res.status(200).json({ transaction });
-    
+
   } catch (error) {
     console.error('Error al obtener transacción:', error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Error al obtener la transacción',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -189,40 +190,44 @@ exports.updateTransaction = async (req, res) => {
     const { amount, type, date, description, categoryId, tags } = req.body;
 
     // Buscar transacción
-    const transaction = await Transaction.findOne({ 
-      where: { id, userId } 
+    const transaction = await Transaction.findOne({
+      where: { id, userId }
     });
-    
+
     if (!transaction) {
       return res.status(404).json({ error: 'Transacción no encontrada' });
     }
 
     // Si está eliminada (soft delete), no permitir editar
     if (!transaction.isActive) {
-      return res.status(400).json({ 
-        error: 'No se puede editar una transacción eliminada. Restáurala primero.' 
+      return res.status(400).json({
+        error: 'No se puede editar una transacción eliminada. Restáurala primero.'
       });
     }
 
     // Validar categoría si viene en la actualización
     if (categoryId !== undefined) {
       const category = await Category.findByPk(categoryId);
-      
+
       if (!category || !category.isActive) {
         return res.status(400).json({ error: 'Categoría no válida' });
       }
-      
+
       // Si también actualiza el tipo, validar compatibilidad
       const newType = type || transaction.type;
       if (category.type !== 'both' && category.type !== newType) {
-        return res.status(400).json({ 
-          error: `La categoría "${category.name}" no es compatible con el tipo ${newType}` 
+        return res.status(400).json({
+          error: `La categoría "${category.name}" no es compatible con el tipo ${newType}`
         });
       }
-      
+
       transaction.categoryId = categoryId;
     }
-
+    // Verificar si la categoría cambió para actualizar la fuente
+    if (categoryId !== undefined && categoryId !== transaction.categoryId) {
+      // Si cambió la categoría, marcarlo como 'corrected'
+      transaction.categorySource = 'corrected';
+    }
     // Actualizar solo campos enviados
     if (amount !== undefined) transaction.amount = amount;
     if (type !== undefined) transaction.type = type;
@@ -241,14 +246,14 @@ exports.updateTransaction = async (req, res) => {
       }]
     });
 
-    return res.status(200).json({ 
-      message: 'Transacción actualizada exitosamente', 
-      transaction: updatedTransaction 
+    return res.status(200).json({
+      message: 'Transacción actualizada exitosamente',
+      transaction: updatedTransaction
     });
-    
+
   } catch (error) {
     console.error('Error al actualizar transacción:', error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Error al actualizar la transacción',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -263,23 +268,23 @@ exports.softDeleteTransaction = async (req, res) => {
     const userId = req.userId;
     const { id } = req.params;
 
-    const transaction = await Transaction.findOne({ 
-      where: { id, userId } 
+    const transaction = await Transaction.findOne({
+      where: { id, userId }
     });
-    
+
     if (!transaction) {
       return res.status(404).json({ error: 'Transacción no encontrada' });
     }
 
     if (!transaction.isActive) {
-      return res.status(400).json({ 
-        error: 'La transacción ya está eliminada' 
+      return res.status(400).json({
+        error: 'La transacción ya está eliminada'
       });
     }
 
     await transaction.softDelete();
 
-    return res.status(200).json({ 
+    return res.status(200).json({
       message: 'Transacción eliminada exitosamente',
       transaction: {
         id: transaction.id,
@@ -287,10 +292,10 @@ exports.softDeleteTransaction = async (req, res) => {
         deletedAt: transaction.deletedAt
       }
     });
-    
+
   } catch (error) {
     console.error('Error al eliminar transacción:', error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Error al eliminar la transacción',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -305,17 +310,18 @@ exports.restoreTransaction = async (req, res) => {
     const userId = req.userId;
     const { id } = req.params;
 
-    const transaction = await Transaction.findOne({ 
-      where: { id, userId } 
+    const transaction = await Transaction.findOne({
+      where: { id, userId },
+      paranoid: false  // Esto permite encontrar transacciones soft-deleted 
     });
-    
+
     if (!transaction) {
       return res.status(404).json({ error: 'Transacción no encontrada' });
     }
 
     if (transaction.isActive) {
-      return res.status(400).json({ 
-        error: 'La transacción no está eliminada' 
+      return res.status(400).json({
+        error: 'La transacción no está eliminada'
       });
     }
 
@@ -330,14 +336,14 @@ exports.restoreTransaction = async (req, res) => {
       }]
     });
 
-    return res.status(200).json({ 
-      message: 'Transacción restaurada exitosamente', 
-      transaction: restoredTransaction 
+    return res.status(200).json({
+      message: 'Transacción restaurada exitosamente',
+      transaction: restoredTransaction
     });
-    
+
   } catch (error) {
     console.error('Error al restaurar transacción:', error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Error al restaurar la transacción',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -352,24 +358,26 @@ exports.deleteTransactionPermanently = async (req, res) => {
     const userId = req.userId;
     const { id } = req.params;
 
-    const transaction = await Transaction.findOne({ 
-      where: { id, userId } 
+    const transaction = await Transaction.findOne({
+      where: { id, userId },
+      paranoid: false  // Esto permite encontrar transacciones soft-deleted
+
     });
-    
+
     if (!transaction) {
       return res.status(404).json({ error: 'Transacción no encontrada' });
     }
 
     await transaction.destroy({ force: true });  // force: true elimina permanentemente
 
-    return res.status(200).json({ 
+    return res.status(200).json({
       message: 'Transacción eliminada permanentemente',
       warning: 'Esta acción no se puede deshacer'
     });
-    
+
   } catch (error) {
     console.error('Error al eliminar permanentemente:', error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Error al eliminar permanentemente la transacción',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
