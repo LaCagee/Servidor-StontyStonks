@@ -205,6 +205,9 @@ exports.updateTransaction = async (req, res) => {
       });
     }
 
+    // GUARDAR EL VALOR ORIGINAL ANTES DE MODIFICAR
+    const originalCategoryId = transaction.categoryId;
+
     // Validar categoría si viene en la actualización
     if (categoryId !== undefined) {
       const category = await Category.findByPk(categoryId);
@@ -222,12 +225,13 @@ exports.updateTransaction = async (req, res) => {
       }
 
       transaction.categoryId = categoryId;
+
+      // Comparar con el valor original
+      if (categoryId !== originalCategoryId) {
+        transaction.categorySource = 'corrected';
+      }
     }
-    // Verificar si la categoría cambió para actualizar la fuente
-    if (categoryId !== undefined && categoryId !== transaction.categoryId) {
-      // Si cambió la categoría, marcarlo como 'corrected'
-      transaction.categorySource = 'corrected';
-    }
+
     // Actualizar solo campos enviados
     if (amount !== undefined) transaction.amount = amount;
     if (type !== undefined) transaction.type = type;
