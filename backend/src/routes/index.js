@@ -11,6 +11,7 @@ const userRoutes = require('./userRoutes');
 const transactionRoutes = require('./transactionRoutes');
 const categoryRoutes = require('./categoryRoutes');
 const dashboardRoutes = require('./dashboardRoutes');
+const suggestionRoutes = require('./SuggestionRoutes');
 
 // Usar rutas
 router.use('/auth', authRoutes);
@@ -18,6 +19,7 @@ router.use('/users', userRoutes);
 router.use('/transactions', transactionRoutes);
 router.use('/categories', categoryRoutes);
 router.use('/dashboard', dashboardRoutes);
+router.use('/suggestions', suggestionRoutes);
 
 // Ruta de prueba
 router.get('/', (req, res) => {
@@ -28,7 +30,8 @@ router.get('/', (req, res) => {
       users: '/api/users',
       transactions: '/api/transactions',
       categories: '/api/categories',
-      dashboard: '/api/dashboard'
+      dashboard: '/api/dashboard',
+      suggestions: '/api/suggestions'
     }
   });
 });
