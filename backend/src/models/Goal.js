@@ -25,7 +25,7 @@ FLUJO COMPLETO DE UNA META FINANCIERA:
    ↓
 3. Usuario va ahorrando (crea transacciones):
    ┌──────────────────────────────────────────┐
-   │ Transaction 1: +$500,000 (Viajes)        │
+   │ Transaction 1: +$500,000 (Viajes)        │<<
    │ Transaction 2: +$300,000 (Viajes)        │
    │ Transaction 3: +$200,000 (Viajes)        │
    └──────────────────────────────────────────┘
