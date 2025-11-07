@@ -1,18 +1,5 @@
-/*
-index.js hace esto:
-┌─────────────────────────────────────┐
-│  1. Importa config/database.js      │
-│  2. Importa User.js, Token.js, etc. │
-│  3. Define relaciones:              │
-│     • User → Token (1:N)            │
-│     • User → Transaction (1:N)      │
-│     • User → Goal (1:N)             │
-│     • User → Budget (1:N)           │
-│  4. Exporta todo                    │
-└─────────────────────────────────────┘
-*/
 // ============================================
-// IMPORTACIONES
+// INDEX DE MODELOS - CON RELACIONES GOALS
 // ============================================
 const sequelize = require('../config/database');
 const { DataTypes } = require('sequelize');
@@ -20,7 +7,6 @@ const { DataTypes } = require('sequelize');
 // ============================================
 // IMPORTAR MODELOS
 // ============================================
-// Importamos cada modelo (los crearemos después)
 const User = require('./User');
 const Token = require('./Token');
 const Category = require('./Category');
@@ -28,16 +14,15 @@ const Transaction = require('./Transaction');
 const Goal = require('./Goal');
 const Budget = require('./Budget');
 
-
 // ============================================
 // DEFINIR RELACIONES (FOREIGN KEYS)
 // ============================================
 
-// 1. USER - TOKEN (1:N - Un usuario puede tener muchos tokens)
+// 1. USER - TOKEN (1:N)
 User.hasMany(Token, {
-  foreignKey: 'userId',  // Columna en la tabla 'tokens'
-  as: 'tokens',          // Alias para hacer queries
-  onDelete: 'CASCADE'    // Si eliminas un user, elimina sus tokens
+  foreignKey: 'userId',
+  as: 'tokens',
+  onDelete: 'CASCADE'
 });
 
 Token.belongsTo(User, {
@@ -45,17 +30,18 @@ Token.belongsTo(User, {
   as: 'user'
 });
 
-// 2. USER - TRANSACTION (1:N - Un usuario puede tener muchas transacciones)
+// 2. USER - TRANSACTION (1:N)
 User.hasMany(Transaction, {
   foreignKey: 'userId',
   as: 'transactions',
-  onDelete: 'CASCADE'    // Si eliminas un user, elimina sus transacciones
+  onDelete: 'CASCADE'
 });
 
 Transaction.belongsTo(User, {
   foreignKey: 'userId',
   as: 'user'
 });
+
 // 3. CATEGORY - TRANSACTION (1:N)
 Category.hasMany(Transaction, {
   foreignKey: 'categoryId',
@@ -67,7 +53,8 @@ Transaction.belongsTo(Category, {
   foreignKey: 'categoryId',
   as: 'category'
 });
-// 4. USER - GOAL (1:N - Un usuario puede tener muchas metas)
+
+// 4. USER - GOAL (1:N)
 User.hasMany(Goal, {
   foreignKey: 'userId',
   as: 'goals',
@@ -78,6 +65,7 @@ Goal.belongsTo(User, {
   foreignKey: 'userId',
   as: 'user'
 });
+
 // 5. CATEGORY - GOAL (1:N)
 Category.hasMany(Goal, {
   foreignKey: 'categoryId',
@@ -89,7 +77,20 @@ Goal.belongsTo(Category, {
   foreignKey: 'categoryId',
   as: 'category'
 });
-// 6. USER - BUDGET (1:N - Un usuario puede tener muchos presupuestos)
+
+// 6. GOAL - TRANSACTION (1:N) ← NUEVA RELACIÓN
+Goal.hasMany(Transaction, {
+  foreignKey: 'goalId',
+  as: 'transactions',
+  onDelete: 'SET NULL'
+});
+
+Transaction.belongsTo(Goal, {
+  foreignKey: 'goalId',
+  as: 'goal'
+});
+
+// 7. USER - BUDGET (1:N)
 User.hasMany(Budget, {
   foreignKey: 'userId',
   as: 'budgets',
@@ -101,11 +102,11 @@ Budget.belongsTo(User, {
   as: 'user'
 });
 
-// 7. CATEGORY - BUDGET (1:N)
+// 8. CATEGORY - BUDGET (1:N)
 Category.hasMany(Budget, {
   foreignKey: 'categoryId',
   as: 'budgets',
-  onDelete: 'RESTRICT'  // No permite borrar categoría si tiene presupuestos activos
+  onDelete: 'RESTRICT'
 });
 
 Budget.belongsTo(Category, {
@@ -117,7 +118,7 @@ Budget.belongsTo(Category, {
 // EXPORTAR MODELOS Y SEQUELIZE
 // ============================================
 module.exports = {
-  sequelize,      // Instancia de Sequelize (para sync, authenticate, etc.)
+  sequelize,
   User,
   Token,
   Category,
