@@ -423,8 +423,7 @@ Budget.getActiveBudgets = async function (userId) {
             userId,
             isActive: true
         },
-        order: [['category', 'ASC']]
-    });
+        order: [['categoryId', 'ASC']]    });
 };
 
 // Obtener presupuestos del mes actual
@@ -440,8 +439,7 @@ Budget.getCurrentMonthBudgets = async function (userId) {
             year: currentYear,
             isActive: true
         },
-        order: [['category', 'ASC']]
-    });
+        order: [['categoryId', 'ASC']]    });
 };
 
 // Obtener presupuestos con información completa
