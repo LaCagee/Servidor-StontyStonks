@@ -1,5 +1,5 @@
 // ============================================
-// MODELO: TRANSACTION (Transacciones)
+// MODELO: TRANSACTION (Transacciones) - CON SOPORTE PARA GOALS
 // ============================================
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
@@ -27,7 +27,7 @@ const Transaction = sequelize.define('Transaction', {
   },
 
   amount: {
-    type: DataTypes.DECIMAL(15, 2),  // 15 dígitos totales, 2 decimales
+    type: DataTypes.DECIMAL(15, 2),
     allowNull: false,
     validate: {
       min: {
@@ -42,7 +42,7 @@ const Transaction = sequelize.define('Transaction', {
   },
 
   type: {
-    type: DataTypes.ENUM('income', 'expense'),  // Solo estos 2 valores
+    type: DataTypes.ENUM('income', 'expense'),
     allowNull: false,
     validate: {
       isIn: {
@@ -54,7 +54,7 @@ const Transaction = sequelize.define('Transaction', {
   },
 
   date: {
-    type: DataTypes.DATEONLY,  // Solo fecha, sin hora (YYYY-MM-DD)
+    type: DataTypes.DATEONLY,
     allowNull: false,
     defaultValue: DataTypes.NOW,
     validate: {
@@ -90,7 +90,7 @@ const Transaction = sequelize.define('Transaction', {
   },
 
   tags: {
-    type: DataTypes.ARRAY(DataTypes.STRING),  // Array de strings en PostgreSQL
+    type: DataTypes.ARRAY(DataTypes.STRING),
     allowNull: true,
     defaultValue: [],
     comment: 'Etiquetas personalizadas para la transacción'
@@ -117,6 +117,19 @@ const Transaction = sequelize.define('Transaction', {
     defaultValue: 'manual',
     field: 'category_source',
     comment: 'Origen de la categoría: manual, auto (sugerida) o corrected (corregida por usuario)'
+  },
+
+  // ========== NUEVO: VINCULACIÓN CON GOALS ==========
+  goalId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    field: 'goal_id',
+    references: {
+      model: 'goals',
+      key: 'id'
+    },
+    onDelete: 'SET NULL',
+    comment: 'ID de la meta asociada (opcional, para vincular ingresos a metas)'
   }
 
 }, {
@@ -127,10 +140,8 @@ const Transaction = sequelize.define('Transaction', {
   tableName: 'transactions',
   timestamps: true,
   underscored: true,
-
-  // ==================== PARANOID (Soft Delete Automático) ====================
-  paranoid: true,  // Activa soft delete automático
-  deletedAt: 'deleted_at',  // Campo que usará para marcar como eliminado
+  paranoid: true,
+  deletedAt: 'deleted_at',
 
   // ==================== ÍNDICES ====================
 
@@ -151,76 +162,66 @@ const Transaction = sequelize.define('Transaction', {
       fields: ['is_active']
     },
     {
-      fields: ['user_id', 'date']  // Índice compuesto para búsquedas por usuario y fecha
+      fields: ['goal_id']  // ← NUEVO: índice para goalId
+    },
+    {
+      fields: ['user_id', 'date']
     }
   ],
 
-  // ==================== SCOPES (Consultas Predefinidas) ====================
-
   scopes: {
-    // Solo transacciones activas
     active: {
       where: { isActive: true }
     },
-
-    // Solo ingresos
     income: {
       where: { type: 'income', isActive: true }
     },
-
-    // Solo gastos
     expense: {
       where: { type: 'expense', isActive: true }
     },
-
-    // Transacciones de un mes específico
-    byMonth: (year, month) => ({
-      where: sequelize.where(
-        sequelize.fn('EXTRACT', sequelize.literal('YEAR FROM date')),
-        year
-      ),
-      where: sequelize.where(
-        sequelize.fn('EXTRACT', sequelize.literal('MONTH FROM date')),
-        month
-      )
-    })
+    byMonth: (year, month) => {
+      const startDate = new Date(year, month - 1, 1); // Primer día del mes
+      const endDate = new Date(year, month, 0);       // Último día del mes
+      
+      return {
+        where: {
+          date: {
+            [Op.between]: [startDate, endDate]
+          }
+        }
+      };
+    }
   }
 });
 
 // ==================== MÉTODOS DE INSTANCIA ====================
 
-// Marcar como eliminada (soft delete manual)
 Transaction.prototype.softDelete = async function () {
   this.isActive = false;
   this.deletedAt = new Date();
   await this.save();
 };
 
-// Restaurar transacción eliminada
 Transaction.prototype.restore = async function () {
   this.isActive = true;
   this.deletedAt = null;
   await this.save();
 };
 
-// Verificar si es ingreso
 Transaction.prototype.isIncome = function () {
   return this.type === 'income';
 };
 
-// Verificar si es gasto
 Transaction.prototype.isExpense = function () {
   return this.type === 'expense';
 };
 
-// Obtener monto con signo (+ para ingreso, - para gasto)
 Transaction.prototype.getSignedAmount = function () {
   return this.type === 'income' ? this.amount : -this.amount;
 };
 
 // ==================== MÉTODOS ESTÁTICOS ====================
 
-// Calcular balance de un usuario
 Transaction.getBalance = async function (userId) {
   const { Op } = require('sequelize');
 
@@ -247,7 +248,6 @@ Transaction.getBalance = async function (userId) {
   };
 };
 
-// Obtener transacciones por categoría
 Transaction.getByCategory = async function (userId, categoryId) {
   const Category = require('./Category');
 
@@ -266,7 +266,6 @@ Transaction.getByCategory = async function (userId, categoryId) {
   });
 };
 
-// Obtener transacciones de un rango de fechas
 Transaction.getByDateRange = async function (userId, startDate, endDate) {
   const { Op } = require('sequelize');
 
@@ -282,7 +281,6 @@ Transaction.getByDateRange = async function (userId, startDate, endDate) {
   });
 };
 
-// Obtener transacciones del mes actual
 Transaction.getCurrentMonth = async function (userId) {
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -291,7 +289,6 @@ Transaction.getCurrentMonth = async function (userId) {
   return await this.getByDateRange(userId, startOfMonth, endOfMonth);
 };
 
-// Obtener resumen por categoría
 Transaction.getSummaryByCategory = async function (userId, startDate, endDate) {
   const { Op } = require('sequelize');
   const Category = require('./Category');
@@ -320,7 +317,6 @@ Transaction.getSummaryByCategory = async function (userId, startDate, endDate) {
   });
 };
 
-// Buscar transacciones por texto en descripción
 Transaction.searchByDescription = async function (userId, searchText) {
   const { Op } = require('sequelize');
 
@@ -328,12 +324,40 @@ Transaction.searchByDescription = async function (userId, searchText) {
     where: {
       userId,
       description: {
-        [Op.iLike]: `%${searchText}%`  // Búsqueda case-insensitive
+        [Op.iLike]: `%${searchText}%`
       },
       isActive: true
     },
     order: [['date', 'DESC']]
   });
+};
+
+// ========== NUEVO: MÉTODOS PARA GOALS ==========
+
+// Obtener transacciones asociadas a una meta específica
+Transaction.getByGoal = async function (userId, goalId) {
+  return await this.findAll({
+    where: {
+      userId,
+      goalId,
+      isActive: true
+    },
+    order: [['date', 'DESC']]
+  });
+};
+
+// Calcular total ahorrado para una meta
+Transaction.getTotalForGoal = async function (userId, goalId) {
+  const total = await this.sum('amount', {
+    where: {
+      userId,
+      goalId,
+      type: 'income',
+      isActive: true
+    }
+  }) || 0;
+
+  return parseFloat(total);
 };
 
 module.exports = Transaction;

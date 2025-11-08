@@ -1,5 +1,5 @@
 // ============================================
-// VALIDADORES DE TRANSACCIONES
+// VALIDADORES DE TRANSACCIONES - CON SOPORTE GOALS
 // ============================================
 const { body, query, validationResult } = require('express-validator');
 
@@ -56,6 +56,12 @@ const validateCreate = [
       return true;
     }),
   
+  // ========== NUEVO: Validación de goalId ==========
+  body('goalId')
+    .optional()
+    .isInt({ min: 1 }).withMessage('El ID de meta debe ser un número válido')
+    .toInt(),
+  
   handleValidationErrors
 ];
 
@@ -91,6 +97,19 @@ const validateUpdate = [
     .custom((value) => {
       if (value && value.some(tag => typeof tag !== 'string')) {
         throw new Error('Todas las etiquetas deben ser texto');
+      }
+      return true;
+    }),
+  
+  // ========== NUEVO: Validación de goalId ==========
+  body('goalId')
+    .optional()
+    .custom((value) => {
+      // Permitir null (desvincular) o un número entero positivo
+      if (value !== null && value !== undefined) {
+        if (!Number.isInteger(value) || value < 1) {
+          throw new Error('El ID de meta debe ser un número válido o null');
+        }
       }
       return true;
     }),
@@ -132,6 +151,12 @@ const validateFilters = [
   query('limit')
     .optional()
     .isInt({ min: 1, max: 100 }).withMessage('El límite debe estar entre 1 y 100')
+    .toInt(),
+  
+  // ========== NUEVO: Filtro por goalId ==========
+  query('goalId')
+    .optional()
+    .isInt({ min: 1 }).withMessage('El ID de meta debe ser un número válido')
     .toInt(),
   
   handleValidationErrors
