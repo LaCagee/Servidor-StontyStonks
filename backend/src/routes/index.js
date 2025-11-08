@@ -1,3 +1,6 @@
+// ============================================
+// RUTAS PRINCIPALES - CON GOALS
+// ============================================
 const express = require('express');
 const router = express.Router();
 const { apiLimiter } = require('../middlewares/rateLimiter');
@@ -12,6 +15,7 @@ const transactionRoutes = require('./transactionRoutes');
 const categoryRoutes = require('./categoryRoutes');
 const dashboardRoutes = require('./dashboardRoutes');
 const suggestionRoutes = require('./SuggestionRoutes');
+const goalRoutes = require('./goalRoutes'); 
 
 // Usar rutas
 router.use('/auth', authRoutes);
@@ -20,6 +24,7 @@ router.use('/transactions', transactionRoutes);
 router.use('/categories', categoryRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/suggestions', suggestionRoutes);
+router.use('/goals', goalRoutes);  
 
 // Ruta de prueba
 router.get('/', (req, res) => {
@@ -32,7 +37,8 @@ router.get('/', (req, res) => {
       categories: '/api/categories',
       dashboard: '/api/dashboard',
       suggestions: '/api/suggestions',
-      users: '/api/users'
+      users: '/api/users',
+      goals: '/api/goals'  
     }
   });
 });
