@@ -331,7 +331,7 @@ exports.getDashboardOverview = async (req, res) => {
       
       Transaction.findAll({
         attributes: [
-          'category_id',
+          'categoryId', // posible corrección aquí si falla reemplazar por 'categoryId' antes "category_id"
           ['type', 'transactionType'],
           [sequelize.fn('SUM', sequelize.col('Transaction.amount')), 'total'],
           [sequelize.fn('COUNT', sequelize.col('Transaction.id')), 'count']

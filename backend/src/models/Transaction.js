@@ -162,7 +162,7 @@ const Transaction = sequelize.define('Transaction', {
       fields: ['is_active']
     },
     {
-      fields: ['goal_id']  // ← NUEVO: índice para goalId
+      fields: ['goal_id']  
     },
     {
       fields: ['user_id', 'date']
