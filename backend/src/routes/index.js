@@ -31,7 +31,8 @@ router.get('/', (req, res) => {
       transactions: '/api/transactions',
       categories: '/api/categories',
       dashboard: '/api/dashboard',
-      suggestions: '/api/suggestions'
+      suggestions: '/api/suggestions',
+      users: '/api/users'
     }
   });
 });
