@@ -1,5 +1,5 @@
 // ============================================
-// RUTAS PRINCIPALES - CON GOALS
+// RUTAS PRINCIPALES 
 // ============================================
 const express = require('express');
 const router = express.Router();
