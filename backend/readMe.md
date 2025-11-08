@@ -946,6 +946,723 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
   "warning": "Esta acción no se puede deshacer"
 }
 ```
+# 🎯 METAS FINANCIERAS (GOALS)
+
+| # | Método | Ruta | Descripción | Auth |
+|---|--------|------|-------------|------|
+| 1 | POST | `/goals` | Crear nueva meta de ahorro | Sí |
+| 2 | GET | `/goals` | Listar todas las metas del usuario (con filtros opcionales) | Sí |
+| 3 | GET | `/goals/:id` | Obtener detalles de una meta específica | Sí |
+| 4 | PUT | `/goals/:id` | Actualizar meta (nombre, monto, fecha límite) | Sí |
+| 5 | POST | `/goals/:id/pause` | Pausar meta temporalmente | Sí |
+| 6 | POST | `/goals/:id/activate` | Reactivar meta pausada | Sí |
+| 7 | POST | `/goals/:id/complete` | Marcar meta como completada manualmente | Sí |
+| 8 | POST | `/goals/:id/cancel` | Cancelar meta (no se puede revertir) | Sí |
+| 9 | DELETE | `/goals/:id` | Eliminar meta (desvincula transacciones, no las elimina) | Sí |
+| 10 | GET | `/goals/:id/transactions` | Ver todas las transacciones asociadas a la meta | Sí |
+| 11 | POST | `/goals/check-progress` | Verificar automáticamente metas completadas | Sí |
+
+---
+
+## 📖 CONCEPTOS IMPORTANTES
+
+### **¿Qué son las metas?**
+Las metas son **objetivos de ahorro** que rastrean cuánto dinero has apartado. **NO son cuentas separadas**, solo hacen seguimiento.
+
+### **Flujo de dinero:**
+```
+Balance General ←→ Transacciones ←→ Metas (seguimiento)
+```
+
+- **Aportar a meta** = Registrar GASTO (`type: "expense"`) con `goalId`
+- **Retirar de meta** = Registrar INGRESO (`type: "income"`) con `goalId`
+- **Eliminar meta** = Solo desvincula transacciones (balance NO cambia)
+
+### **Tipos de transacciones con metas:**
+- `type: "expense" + goalId` → **SUMA** al progreso de la meta
+- `type: "income" + goalId` → **RESTA** del progreso de la meta
+
+---
+
+## 🔧 EJEMPLOS DE USO
+
+### **1. Crear Meta**
+**Parámetros obligatorios:** `name`, `targetAmount`  
+**Parámetros opcionales:** `deadline`, `categoryId`, `description`
+
+```http
+POST /api/goals
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+```
+```json
+{
+  "name": "Vacaciones 2026",
+  "targetAmount": 500000,
+  "deadline": "2026-12-31",
+  "categoryId": 15,
+  "description": "Viaje a Europa"
+}
+```
+
+**Respuesta:**
+```json
+{
+  "message": "Meta creada exitosamente",
+  "goal": {
+    "id": 1,
+    "name": "Vacaciones 2026",
+    "targetAmount": 500000,
+    "deadline": "2026-12-31",
+    "categoryId": 15,
+    "category": {
+      "id": 15,
+      "name": "Inversiones",
+      "icon": "chart-line",
+      "color": "#FDCB6E"
+    },
+    "status": "active",
+    "description": "Viaje a Europa",
+    "progress": {
+      "currentAmount": 0,
+      "targetAmount": 500000,
+      "remaining": 500000,
+      "percentage": 0,
+      "isCompleted": false
+    },
+    "projection": {
+      "projectedTotal": 0,
+      "dailyAverage": 0,
+      "willExceed": false,
+      "projectedExcess": 0
+    },
+    "daysRemaining": 395,
+    "isOverdue": false,
+    "isNearDeadline": false,
+    "createdAt": "2025-11-08T10:30:00.000Z",
+    "updatedAt": "2025-11-08T10:30:00.000Z"
+  }
+}
+```
+
+---
+
+### **2. Listar Todas las Metas**
+**Parámetros obligatorios:** Ninguno  
+**Parámetros opcionales:** `status` (valores: `active`, `paused`, `completed`, `cancelled`)
+
+```http
+GET /api/goals?status=active
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Respuesta:**
+```json
+{
+  "message": "Metas obtenidas exitosamente",
+  "count": 2,
+  "goals": [
+    {
+      "id": 1,
+      "name": "Vacaciones 2026",
+      "targetAmount": 500000,
+      "status": "active",
+      "progress": {
+        "currentAmount": 150000,
+        "remaining": 350000,
+        "percentage": 30.00
+      },
+      "daysRemaining": 395
+    },
+    {
+      "id": 2,
+      "name": "Fondo de Emergencia",
+      "targetAmount": 1000000,
+      "status": "active",
+      "progress": {
+        "currentAmount": 500000,
+        "remaining": 500000,
+        "percentage": 50.00
+      },
+      "daysRemaining": null
+    }
+  ]
+}
+```
+
+---
+
+### **3. Ver Detalles de una Meta**
+**Parámetros obligatorios:** `id` (en la URL)
+
+```http
+GET /api/goals/1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Respuesta:**
+```json
+{
+  "goal": {
+    "id": 1,
+    "name": "Vacaciones 2026",
+    "description": "Viaje a Europa",
+    "targetAmount": 500000,
+    "categoryId": 15,
+    "category": {
+      "id": 15,
+      "name": "Inversiones",
+      "icon": "chart-line",
+      "color": "#FDCB6E"
+    },
+    "deadline": "2026-12-31",
+    "status": "active",
+    "progress": {
+      "currentAmount": 150000,
+      "targetAmount": 500000,
+      "remaining": 350000,
+      "percentage": 30.00,
+      "isCompleted": false
+    },
+    "projection": {
+      "projectedTotal": 465000,
+      "dailyAverage": 1200,
+      "willExceed": false,
+      "projectedExcess": 0
+    },
+    "daysRemaining": 395,
+    "isOverdue": false,
+    "isNearDeadline": false,
+    "createdAt": "2025-11-08T10:30:00.000Z",
+    "updatedAt": "2025-11-08T15:45:00.000Z"
+  }
+}
+```
+
+---
+
+### **4. Actualizar Meta**
+**Parámetros obligatorios:** `id` (en la URL)  
+**Parámetros opcionales:** `name`, `targetAmount`, `deadline`, `categoryId`, `description`
+
+```http
+PUT /api/goals/1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+```
+```json
+{
+  "name": "Vacaciones Europa 2026",
+  "targetAmount": 600000,
+  "deadline": "2026-06-30",
+  "description": "Viaje de 20 días por Europa"
+}
+```
+
+**Respuesta:**
+```json
+{
+  "message": "Meta actualizada exitosamente",
+  "goal": {
+    "id": 1,
+    "name": "Vacaciones Europa 2026",
+    "targetAmount": 600000,
+    "deadline": "2026-06-30",
+    "description": "Viaje de 20 días por Europa",
+    "status": "active",
+    "progress": {
+      "currentAmount": 150000,
+      "targetAmount": 600000,
+      "remaining": 450000,
+      "percentage": 25.00,
+      "isCompleted": false
+    },
+    "daysRemaining": 234,
+    "updatedAt": "2025-11-08T16:00:00.000Z"
+  }
+}
+```
+
+---
+
+### **5. Aportar Dinero a la Meta (Crear Transacción)**
+**Parámetros obligatorios:** `amount`, `type`, `categoryId`  
+**Parámetros opcionales:** `date`, `description`, `tags`, `goalId`
+
+```http
+POST /api/transactions
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+```
+```json
+{
+  "amount": 50000,
+  "type": "expense",
+  "categoryId": 15,
+  "goalId": 1,
+  "date": "2025-11-08",
+  "description": "Ahorro mensual para vacaciones",
+  "tags": ["ahorro", "vacaciones"]
+}
+```
+
+**Respuesta:**
+```json
+{
+  "message": "Transacción creada exitosamente",
+  "transaction": {
+    "id": 123,
+    "userId": 1,
+    "amount": 50000,
+    "type": "expense",
+    "date": "2025-11-08",
+    "description": "Ahorro mensual para vacaciones",
+    "categoryId": 15,
+    "goalId": 1,
+    "tags": ["ahorro", "vacaciones"],
+    "categorySource": "manual",
+    "isActive": true,
+    "createdAt": "2025-11-08T16:30:00.000Z",
+    "category": {
+      "id": 15,
+      "name": "Inversiones",
+      "icon": "chart-line",
+      "color": "#FDCB6E",
+      "type": "income"
+    }
+  }
+}
+```
+
+**💡 Efecto en la meta:**
+- ✅ Progreso aumenta: 150000 → 200000 (40%)
+- ✅ Balance general disminuye: -50000
+
+---
+
+### **6. Retirar Dinero de la Meta (Crear Transacción)**
+**Parámetros obligatorios:** `amount`, `type`, `categoryId`  
+**Parámetros opcionales:** `date`, `description`, `tags`, `goalId`
+
+```http
+POST /api/transactions
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+```
+```json
+{
+  "amount": 30000,
+  "type": "income",
+  "categoryId": 15,
+  "goalId": 1,
+  "date": "2025-11-08",
+  "description": "Retiro de ahorro para emergencia médica",
+  "tags": ["retiro", "emergencia"]
+}
+```
+
+**Respuesta:**
+```json
+{
+  "message": "Transacción creada exitosamente",
+  "transaction": {
+    "id": 124,
+    "userId": 1,
+    "amount": 30000,
+    "type": "income",
+    "date": "2025-11-08",
+    "description": "Retiro de ahorro para emergencia médica",
+    "categoryId": 15,
+    "goalId": 1,
+    "tags": ["retiro", "emergencia"],
+    "isActive": true,
+    "createdAt": "2025-11-08T17:00:00.000Z"
+  }
+}
+```
+
+**💡 Efecto en la meta:**
+- ✅ Progreso disminuye: 200000 → 170000 (34%)
+- ✅ Balance general aumenta: +30000
+
+---
+
+### **7. Ver Transacciones de una Meta**
+**Parámetros obligatorios:** `id` (en la URL)
+
+```http
+GET /api/goals/1/transactions
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Respuesta:**
+```json
+{
+  "message": "Transacciones obtenidas exitosamente",
+  "goalId": 1,
+  "goalName": "Vacaciones Europa 2026",
+  "totalSaved": 170000,
+  "transactionCount": 4,
+  "transactions": [
+    {
+      "id": 124,
+      "amount": 30000,
+      "type": "income",
+      "date": "2025-11-08",
+      "description": "Retiro de ahorro para emergencia médica",
+      "categoryId": 15,
+      "tags": ["retiro", "emergencia"],
+      "createdAt": "2025-11-08T17:00:00.000Z",
+      "category": {
+        "id": 15,
+        "name": "Inversiones",
+        "icon": "chart-line",
+        "color": "#FDCB6E"
+      }
+    },
+    {
+      "id": 123,
+      "amount": 50000,
+      "type": "expense",
+      "date": "2025-11-08",
+      "description": "Ahorro mensual para vacaciones",
+      "categoryId": 15,
+      "tags": ["ahorro", "vacaciones"],
+      "createdAt": "2025-11-08T16:30:00.000Z",
+      "category": {
+        "id": 15,
+        "name": "Inversiones",
+        "icon": "chart-line",
+        "color": "#FDCB6E"
+      }
+    },
+    {
+      "id": 110,
+      "amount": 100000,
+      "type": "expense",
+      "date": "2025-11-01",
+      "description": "Primer aporte",
+      "categoryId": 15,
+      "createdAt": "2025-11-01T10:00:00.000Z"
+    },
+    {
+      "id": 115,
+      "amount": 50000,
+      "type": "expense",
+      "date": "2025-11-05",
+      "description": "Aporte adicional",
+      "categoryId": 15,
+      "createdAt": "2025-11-05T14:30:00.000Z"
+    }
+  ]
+}
+```
+
+---
+
+### **8. Pausar Meta**
+**Parámetros obligatorios:** `id` (en la URL)
+
+```http
+POST /api/goals/1/pause
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Respuesta:**
+```json
+{
+  "message": "Meta pausada exitosamente",
+  "goal": {
+    "id": 1,
+    "name": "Vacaciones Europa 2026",
+    "status": "paused"
+  }
+}
+```
+
+---
+
+### **9. Reactivar Meta**
+**Parámetros obligatorios:** `id` (en la URL)
+
+```http
+POST /api/goals/1/activate
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Respuesta:**
+```json
+{
+  "message": "Meta reactivada exitosamente",
+  "goal": {
+    "id": 1,
+    "name": "Vacaciones Europa 2026",
+    "targetAmount": 600000,
+    "status": "active",
+    "progress": {
+      "currentAmount": 170000,
+      "remaining": 430000,
+      "percentage": 28.33,
+      "isCompleted": false
+    },
+    "daysRemaining": 234
+  }
+}
+```
+
+---
+
+### **10. Cancelar Meta**
+**Parámetros obligatorios:** `id` (en la URL)
+
+```http
+POST /api/goals/1/cancel
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Respuesta:**
+```json
+{
+  "message": "Meta cancelada exitosamente",
+  "goal": {
+    "id": 1,
+    "name": "Vacaciones Europa 2026",
+    "status": "cancelled"
+  }
+}
+```
+
+**⚠️ NOTA:** No se puede reactivar una meta cancelada. Las transacciones siguen vinculadas.
+
+---
+
+### **11. Marcar Meta como Completada**
+**Parámetros obligatorios:** `id` (en la URL)
+
+```http
+POST /api/goals/1/complete
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Respuesta:**
+```json
+{
+  "message": "🎉 ¡Felicidades! Meta completada exitosamente",
+  "goal": {
+    "id": 1,
+    "name": "Vacaciones Europa 2026",
+    "targetAmount": 600000,
+    "status": "completed",
+    "progress": {
+      "currentAmount": 600000,
+      "targetAmount": 600000,
+      "remaining": 0,
+      "percentage": 100,
+      "isCompleted": true
+    },
+    "updatedAt": "2025-11-08T18:00:00.000Z"
+  }
+}
+```
+
+---
+
+### **12. Verificar Progreso Automático**
+**Parámetros obligatorios:** Ninguno
+
+```http
+POST /api/goals/check-progress
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Respuesta (si hay metas completadas):**
+```json
+{
+  "message": "¡Felicidades! 1 meta(s) completada(s) automáticamente",
+  "completedGoals": [
+    {
+      "id": 1,
+      "name": "Vacaciones Europa 2026",
+      "targetAmount": 600000,
+      "status": "completed",
+      "progress": {
+        "currentAmount": 600000,
+        "percentage": 100,
+        "isCompleted": true
+      },
+      "updatedAt": "2025-11-08T18:00:00.000Z"
+    }
+  ]
+}
+```
+
+**Respuesta (si no hay metas completadas):**
+```json
+{
+  "message": "No hay metas completadas automáticamente",
+  "completedGoals": []
+}
+```
+
+---
+
+### **13. Eliminar Meta (Sin perder transacciones)**
+**Parámetros obligatorios:** `id` (en la URL)
+
+```http
+DELETE /api/goals/1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Respuesta:**
+```json
+{
+  "message": "Meta eliminada exitosamente"
+}
+```
+
+**💡 ¿Qué pasa con el dinero y las transacciones?**
+- ✅ Transacciones se **desvinculan** (`goalId` → `NULL`)
+- ✅ Balance general **NO cambia**
+- ✅ Dinero ahorrado queda en tu balance histórico
+- ✅ Puedes ver transacciones en historial general (`GET /api/transactions`)
+- ✅ NO se crea ninguna transacción de "recuperación"
+
+---
+
+## 🚨 PREGUNTAS FRECUENTES
+
+### **Q: ¿Por qué aportar es "expense" y retirar es "income"?**
+**A:** Porque refleja el flujo real de dinero en tu bolsillo:
+- **Aportas** → Sacas dinero de tu bolsillo → `expense` (gasto)
+- **Retiras** → Regresa dinero a tu bolsillo → `income` (ingreso)
+
+### **Q: ¿Qué pasa con mi dinero si elimino la meta?**
+**A:** NADA. Las transacciones quedan registradas normalmente. Solo pierdes el "seguimiento" de la meta. El balance NO cambia.
+
+### **Q: ¿Puedo vincular transacciones viejas a una meta?**
+**A:** Sí, actualiza la transacción:
+```http
+PUT /api/transactions/123
+Content-Type: application/json
+
+{
+  "goalId": 1
+}
+```
+
+### **Q: ¿Puedo desvincular una transacción de una meta?**
+**A:** Sí, actualiza la transacción:
+```http
+PUT /api/transactions/123
+Content-Type: application/json
+
+{
+  "goalId": null
+}
+```
+
+### **Q: ¿Puedo tener múltiples metas activas?**
+**A:** Sí, sin límite. Cada transacción puede vincularse solo a **UNA** meta a la vez.
+
+### **Q: ¿Una meta pausada sigue sumando progreso?**
+**A:** Sí. El estado `paused` es solo informativo. Las transacciones con `goalId` siempre afectan el progreso.
+
+### **Q: ¿Qué diferencia hay entre "completar" y "cancelar"?**
+- **Completar:** Marca que lograste tu objetivo 🎉
+- **Cancelar:** Decides abandonar la meta ❌
+
+Ambas son irreversibles pero las transacciones quedan vinculadas.
+
+---
+
+## ⚠️ ERRORES COMUNES
+
+### **1. Intentar "retirar" con expense**
+```json
+❌ INCORRECTO:
+{
+  "amount": 20000,
+  "type": "expense",  ← ERROR: Suma en vez de restar
+  "goalId": 1,
+  "description": "Retiro de meta"
+}
+
+✅ CORRECTO:
+{
+  "amount": 20000,
+  "type": "income",   ← Resta del progreso
+  "goalId": 1,
+  "description": "Retiro de meta"
+}
+```
+
+### **2. Confundir balance con progreso de meta**
+```
+Balance general = TODOS tus ingresos - TODOS tus gastos
+Progreso de meta = (Aportes a esa meta) - (Retiros de esa meta)
+
+Son cosas DIFERENTES.
+```
+
+### **3. Pensar que eliminar meta elimina el dinero**
+```
+❌ "Si elimino la meta, ¿pierdo el dinero?"
+✅ NO. Solo desvinculas las transacciones. El balance NO cambia.
+```
+
+### **4. No entender la proyección**
+```json
+"projection": {
+  "dailyAverage": 1200,      ← Promedio diario de ahorro
+  "projectedTotal": 465000,  ← Si sigues así, llegarás a...
+  "willExceed": false        ← ¿Superarás la meta?
+}
+```
+Esta proyección usa tus aportes históricos para predecir si alcanzarás la meta.
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ---
 
