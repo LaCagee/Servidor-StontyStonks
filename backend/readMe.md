@@ -1624,44 +1624,188 @@ Esta proyección usa tus aportes históricos para predecir si alcanzarás la met
 ---
 
 
+## 📊 Tabla de Rutas
 
+| # | Método | Ruta | Descripción | Auth |
+|---|---------|------|--------------|------|
+| 1 | **GET** | `/profile` | Obtener perfil del usuario autenticado | ✅ Sí |
+| 2 | **PUT** | `/profile/name` | Actualizar nombre del usuario | ✅ Sí |
+| 3 | **PUT** | `/profile/email` | Cambiar email del usuario | ✅ Sí |
+| 4 | **PUT** | `/profile/password` | Cambiar contraseña del usuario | ✅ Sí |
 
+---
 
+## 🧩 Ejemplos de Uso
 
+### 1️⃣ Obtener Perfil de Usuario
 
+**Endpoint:**  
+`GET /profile`
 
+**Headers:**
+```json
+{
+  "Authorization": "Bearer {{token}}"
+}
+```
 
+**Ejemplo CURL:**
+```bash
+curl -X GET http://localhost:3000/api/users/profile   -H "Authorization: Bearer {{token}}"
+```
 
+**Respuesta esperada:**
+```json
+{
+  "id": 1,
+  "name": "Juan Pérez",
+  "email": "juanperez@mail.com",
+  "createdAt": "2025-10-25T12:34:56.789Z"
+}
+```
 
+**Parámetros:**  
+- No requiere parámetros en el body.  
+- Solo necesita un token JWT válido en los headers.
 
+---
 
+### 2️⃣ Actualizar Nombre del Usuario
 
+**Endpoint:**  
+`PUT /profile/name`
 
+**Headers:**
+```json
+{
+  "Authorization": "Bearer {{token}}",
+  "Content-Type": "application/json"
+}
+```
 
+**Body:**
+```json
+{
+  "name": "Juan Carlos Pérez González"
+}
+```
 
+**Ejemplo CURL:**
+```bash
+curl -X PUT http://localhost:3000/api/users/profile/name   -H "Authorization: Bearer {{token}}"   -H "Content-Type: application/json"   -d '{"name": "Juan Carlos Pérez González"}'
+```
 
+**Respuesta esperada:**
+```json
+{
+  "message": "Nombre actualizado correctamente",
+  "user": {
+    "id": 1,
+    "name": "Juan Carlos Pérez González",
+    "email": "juanperez@mail.com"
+  }
+}
+```
 
+**Parámetros:**  
+- `name` *(string, requerido)* — Debe tener entre 2 y 100 caracteres.
 
+---
 
+### 3️⃣ Cambiar Email del Usuario
 
+**Endpoint:**  
+`PUT /profile/email`
 
+**Headers:**
+```json
+{
+  "Authorization": "Bearer {{token}}",
+  "Content-Type": "application/json"
+}
+```
 
+**Body:**
+```json
+{
+  "newEmail": "nuevo.email@mail.com",
+  "password": "Password123"
+}
+```
 
+**Ejemplo CURL:**
+```bash
+curl -X PUT http://localhost:3000/api/users/profile/email   -H "Authorization: Bearer {{token}}"   -H "Content-Type: application/json"   -d '{"newEmail": "nuevo.email@mail.com", "password": "Password123"}'
+```
 
+**Respuesta esperada:**
+```json
+{
+  "message": "Email actualizado. Revisa tu bandeja para confirmar el cambio."
+}
+```
 
+**Parámetros:**  
+- `newEmail` *(string, requerido)* — Debe ser un email válido y no estar registrado.  
+- `password` *(string, requerido)* — Contraseña actual del usuario.  
 
+---
 
+### 4️⃣ Cambiar Contraseña del Usuario
 
+**Endpoint:**  
+`PUT /profile/password`
 
+**Headers:**
+```json
+{
+  "Authorization": "Bearer {{token}}",
+  "Content-Type": "application/json"
+}
+```
 
+**Body:**
+```json
+{
+  "currentPassword": "Password123",
+  "newPassword": "NewPassword456",
+  "confirmPassword": "NewPassword456"
+}
+```
 
+**Ejemplo CURL:**
+```bash
+curl -X PUT http://localhost:3000/api/users/profile/password   -H "Authorization: Bearer {{token}}"   -H "Content-Type: application/json"   -d '{"currentPassword": "Password123", "newPassword": "NewPassword456", "confirmPassword": "NewPassword456"}'
+```
 
+**Respuesta esperada:**
+```json
+{
+  "message": "Contraseña actualizada correctamente. Se envió un correo de confirmación."
+}
+```
 
+**Parámetros:**  
+- `currentPassword` *(string, requerido)* — Contraseña actual.  
+- `newPassword` *(string, requerido)* — Nueva contraseña (mínimo 8 caracteres, 1 mayúscula, 1 minúscula, 1 número).  
+- `confirmPassword` *(string, requerido)* — Debe coincidir con `newPassword`.
 
+---
 
+## ⚠️ Ejemplos de Errores Comunes
 
+| Error | Causa | Código |
+|--------|--------|--------|
+| `401 Unauthorized` | Falta el token o es inválido | 401 |
+| `400 Bad Request` | Campos faltantes o formato incorrecto | 400 |
+| `409 Conflict` | Email ya está registrado | 409 |
+| `422 Unprocessable Entity` | Contraseña o nombre no cumplen los requisitos | 422 |
 
+---
 
+📘 **Notas finales:**
+- Todas las rutas requieren autenticación mediante **Bearer Token (JWT)**.  
+- Si cambias el email o contraseña, se recomienda cerrar sesión y volver a iniciar para actualizar el token.
 
 
 ---
