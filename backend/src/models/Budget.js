@@ -455,7 +455,8 @@ Budget.getBudgetsWithInfo = async function (userId, month = null, year = null) {
             year: targetYear,
             isActive: true
         },
-        order: [['category', 'ASC']]
+        order: [['categoryId', 'ASC']]    
+
     });
 
     const budgetsWithInfo = await Promise.all(
@@ -541,8 +542,9 @@ Budget.createNextMonthBudgets = async function (userId) {
 Budget.getSummary = async function (userId, month = null, year = null) {
     const budgetsWithInfo = await this.getBudgetsWithInfo(userId, month, year);
 
-    const totalLimit = budgetsWithInfo.reduce((sum, b) => sum + b.monthlyLimit, 0);
-    const totalSpent = budgetsWithInfo.reduce((sum, b) => sum + b.spent.currentSpent, 0);
+    // Convertir los valores Decimal a números antes de sumar
+    const totalLimit = budgetsWithInfo.reduce((sum, b) => sum + parseFloat(b.monthlyLimit), 0);
+    const totalSpent = budgetsWithInfo.reduce((sum, b) => sum + parseFloat(b.spent.currentSpent), 0);
     const totalRemaining = totalLimit - totalSpent;
     const overallPercentage = totalLimit > 0 ? (totalSpent / totalLimit) * 100 : 0;
 
@@ -559,6 +561,7 @@ Budget.getSummary = async function (userId, month = null, year = null) {
         alertCount,
         budgets: budgetsWithInfo
     };
+
 };
 
 module.exports = Budget;

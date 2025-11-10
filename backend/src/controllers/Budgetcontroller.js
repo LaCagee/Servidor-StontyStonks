@@ -132,13 +132,13 @@ exports.getCurrentMonthBudgets = async (req, res) => {
     );
 
     // Calcular resumen
-    const summary = {
-      totalBudgets: budgetsWithInfo.length,
-      totalLimit: budgetsWithInfo.reduce((sum, b) => sum + b.monthlyLimit, 0),
-      totalSpent: budgetsWithInfo.reduce((sum, b) => sum + b.spent.currentSpent, 0),
-      exceededCount: budgetsWithInfo.filter(b => b.spent.isExceeded).length,
-      alertCount: budgetsWithInfo.filter(b => b.spent.shouldAlert).length
-    };
+const summary = {
+  totalBudgets: budgetsWithInfo.length,
+  totalLimit: budgetsWithInfo.reduce((sum, b) => sum + parseFloat(b.monthlyLimit), 0),
+  totalSpent: budgetsWithInfo.reduce((sum, b) => sum + parseFloat(b.spent.currentSpent), 0),
+  exceededCount: budgetsWithInfo.filter(b => b.spent.isExceeded).length,
+  alertCount: budgetsWithInfo.filter(b => b.spent.shouldAlert).length
+};
 
     res.json({
       message: 'Presupuestos del mes actual obtenidos exitosamente',
