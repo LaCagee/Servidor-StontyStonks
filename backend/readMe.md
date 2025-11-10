@@ -1624,7 +1624,89 @@ Esta proyección usa tus aportes históricos para predecir si alcanzarás la met
 ---
 
 
-## 📊 Tabla de Rutas
+
+## 📊 PRESUPUESTOS (BUDGETS)
+
+| # | Método | Ruta | Descripción | Auth |
+|---|--------|------|-------------|------|
+| 1 | POST | `/budgets` | Crear nuevo presupuesto mensual | Sí |
+| 2 | POST | `/budgets/multiple` | Crear múltiples presupuestos (1-20) | Sí |
+| 3 | GET | `/budgets` | Listar todos los presupuestos del usuario (con filtros opcionales: month, year, status) | Sí |
+| 4 | GET | `/budgets/current-month` | Obtener presupuestos del mes actual | Sí |
+| 5 | GET | `/budgets/:id` | Obtener detalles de un presupuesto específico | Sí |
+| 6 | PUT | `/budgets/:id` | Actualizar presupuesto (límite, umbral de alerta, descripción) | Sí |
+| 7 | DELETE | `/budgets/:id` | Eliminar presupuesto | Sí |
+| 8 | POST | `/budgets/:id/deactivate` | Desactivar presupuesto temporalmente | Sí |
+| 9 | POST | `/budgets/:id/activate` | Reactivar presupuesto desactivado | Sí |
+| 10 | GET | `/budgets/alerts/pending` | Obtener presupuestos que requieren alerta (alcanzaron umbral) | Sí |
+| 11 | GET | `/budgets/alerts/exceeded` | Obtener presupuestos excedidos (superaron límite) | Sí |
+| 12 | GET | `/budgets/summary/general` | Obtener resumen general de todos los presupuestos | Sí |
+| 13 | GET | `/budgets/suggest/auto` | Sugerir presupuesto automático basado en historial (requiere: categoryId, opcional: months) | Sí |
+| 14 | POST | `/budgets/auto/next-month` | Crear presupuestos para el próximo mes (copia los del mes actual) | Sí |
+
+### Validaciones
+
+#### Crear Presupuesto (POST `/budgets`):
+```json
+{
+  "categoryId": 1,              // Requerido, número entero positivo
+  "monthlyLimit": 150000,       // Requerido, número decimal > 0
+  "alertThreshold": 80,         // Opcional, número entre 1-100 (porcentaje)
+  "month": 11,                  // Requerido, número entre 1-12
+  "year": 2025,                 // Requerido, número entre 2020-2100
+  "description": "Texto..."     // Opcional, máximo 300 caracteres
+}
+```
+
+#### Crear Múltiples Presupuestos (POST `/budgets/multiple`):
+```json
+{
+  "budgets": [                  // Array de 1-20 presupuestos
+    {
+      "categoryId": 1,
+      "monthlyLimit": 150000,
+      "month": 11,
+      "year": 2025
+    }
+  ]
+}
+```
+
+#### Actualizar Presupuesto (PUT `/budgets/:id`):
+```json
+{
+  "monthlyLimit": 180000,       // Opcional, número > 0
+  "alertThreshold": 75,         // Opcional, número entre 1-100
+  "description": "Texto..."     // Opcional, máximo 300 caracteres
+}
+```
+
+#### Filtros de Búsqueda (GET `/budgets`):
+- `month`: Opcional, entre 1-12
+- `year`: Opcional, entre 2020-2100
+- `status`: Opcional, valores: `active` o `inactive`
+
+**Ejemplo:** `/budgets?month=11&year=2025&status=active`
+
+#### Sugerir Presupuesto (GET `/budgets/suggest/auto`):
+- `categoryId`: Requerido, número entero positivo
+- `months`: Opcional, entre 1-12 (default: 3)
+
+**Ejemplo:** `/budgets/suggest/auto?categoryId=1&months=6`
+
+### Notas Importantes
+
+- ✅ Todas las rutas requieren autenticación mediante token JWT
+- 📊 Los presupuestos se asocian automáticamente al usuario autenticado
+- 💰 El sistema calcula el gasto actual basándose en las transacciones
+- 🔔 Las alertas se activan al alcanzar el `alertThreshold` (porcentaje del límite)
+- ⏸️ Desactivar un presupuesto no lo elimina permanentemente
+- 🤖 La sugerencia automática analiza el historial de gastos del usuario
+- 🔄 La creación automática del próximo mes facilita la planificación recurrente
+
+---
+
+## 👤 PERFIL DE USUARIO
 
 | # | Método | Ruta | Descripción | Auth |
 |---|---------|------|--------------|------|
@@ -1886,176 +1968,6 @@ try {
   }
 }
 ```
-## 📊 Módulo de Presupuestos (Budget)
-
-### Descripción
-Sistema completo de gestión de presupuestos mensuales por categoría, con alertas automáticas, sugerencias basadas en historial y capacidad de crear múltiples presupuestos.
-
-### Endpoints Disponibles
-
-#### 🔹 CRUD Básico
-
-**1. Crear Presupuesto**
-- **Método:** `POST /api/budgets`
-- **Auth:** Requerida
-- **Body:**
-```json
-{
-  "categoryId": 1,
-  "monthlyLimit": 150000,
-  "alertThreshold": 80,
-  "month": 11,
-  "year": 2025,
-  "description": "Presupuesto para alimentación"
-}
-```
-- **Respuesta:** Presupuesto creado con ID
-
-**2. Crear Múltiples Presupuestos**
-- **Método:** `POST /api/budgets/multiple`
-- **Auth:** Requerida
-- **Body:**
-```json
-{
-  "budgets": [
-    {
-      "categoryId": 1,
-      "monthlyLimit": 150000,
-      "month": 11,
-      "year": 2025
-    },
-    {
-      "categoryId": 2,
-      "monthlyLimit": 80000,
-      "month": 11,
-      "year": 2025
-    }
-  ]
-}
-```
-- **Límite:** Entre 1 y 20 presupuestos
-- **Respuesta:** Array de presupuestos creados
-
-**3. Obtener Todos los Presupuestos**
-- **Método:** `GET /api/budgets`
-- **Auth:** Requerida
-- **Query Params (opcionales):**
-  - `month`: Filtrar por mes (1-12)
-  - `year`: Filtrar por año (2020-2100)
-  - `status`: Filtrar por estado (`active` o `inactive`)
-- **Ejemplo:** `/api/budgets?month=11&year=2025&status=active`
-
-**4. Obtener Presupuestos del Mes Actual**
-- **Método:** `GET /api/budgets/current-month`
-- **Auth:** Requerida
-- **Descripción:** Retorna todos los presupuestos del mes en curso
-
-**5. Obtener Presupuesto por ID**
-- **Método:** `GET /api/budgets/:id`
-- **Auth:** Requerida
-- **Ejemplo:** `/api/budgets/5`
-
-**6. Actualizar Presupuesto**
-- **Método:** `PUT /api/budgets/:id`
-- **Auth:** Requerida
-- **Body (todos opcionales):**
-```json
-{
-  "monthlyLimit": 180000,
-  "alertThreshold": 75,
-  "description": "Presupuesto actualizado"
-}
-```
-
-**7. Eliminar Presupuesto**
-- **Método:** `DELETE /api/budgets/:id`
-- **Auth:** Requerida
-
----
-
-#### 🔹 Activación/Desactivación
-
-**8. Desactivar Presupuesto**
-- **Método:** `POST /api/budgets/:id/deactivate`
-- **Auth:** Requerida
-- **Descripción:** Desactiva el presupuesto sin eliminarlo
-
-**9. Activar Presupuesto**
-- **Método:** `POST /api/budgets/:id/activate`
-- **Auth:** Requerida
-- **Descripción:** Reactiva un presupuesto desactivado
-
----
-
-#### 🔹 Alertas y Resúmenes
-
-**10. Obtener Presupuestos que Requieren Alerta**
-- **Método:** `GET /api/budgets/alerts/pending`
-- **Auth:** Requerida
-- **Descripción:** Retorna presupuestos que han alcanzado su umbral de alerta
-
-**11. Obtener Presupuestos Excedidos**
-- **Método:** `GET /api/budgets/alerts/exceeded`
-- **Auth:** Requerida
-- **Descripción:** Retorna presupuestos que han superado su límite mensual
-
-**12. Obtener Resumen General**
-- **Método:** `GET /api/budgets/summary/general`
-- **Auth:** Requerida
-- **Descripción:** Estadísticas generales de todos los presupuestos
-
----
-
-#### 🔹 Sugerencias y Automatización
-
-**13. Sugerir Presupuesto Automático**
-- **Método:** `GET /api/budgets/suggest/auto`
-- **Auth:** Requerida
-- **Query Params:**
-  - `categoryId` (obligatorio): ID de la categoría
-  - `months` (opcional): Cantidad de meses a analizar (1-12, default: 3)
-- **Ejemplo:** `/api/budgets/suggest/auto?categoryId=1&months=6`
-- **Descripción:** Analiza el historial de gastos y sugiere un presupuesto
-
-**14. Crear Presupuestos para el Próximo Mes**
-- **Método:** `POST /api/budgets/auto/next-month`
-- **Auth:** Requerida
-- **Descripción:** Copia automáticamente los presupuestos del mes actual al próximo mes
-
----
-
-### Validaciones
-
-#### Crear Presupuesto:
-- `categoryId`: Requerido, número entero positivo
-- `monthlyLimit`: Requerido, número decimal mayor a 0
-- `alertThreshold`: Opcional, número entre 1-100 (porcentaje)
-- `month`: Requerido, número entre 1-12
-- `year`: Requerido, número entre 2020-2100
-- `description`: Opcional, máximo 300 caracteres
-
-#### Actualizar Presupuesto:
-- Todos los campos son opcionales
-- `monthlyLimit`: Debe ser mayor a 0
-- `alertThreshold`: Debe estar entre 1-100
-- `description`: Máximo 300 caracteres
-
-#### Filtros de Búsqueda:
-- `month`: Opcional, entre 1-12
-- `year`: Opcional, entre 2020-2100
-- `status`: Opcional, valores válidos: `active` o `inactive`
-
----
-
-### Notas Importantes
-
-1. **Todas las rutas requieren autenticación** mediante token JWT
-2. Los presupuestos están asociados al usuario autenticado
-3. El sistema calcula automáticamente el gasto actual basado en las transacciones
-4. Las alertas se activan cuando el gasto alcanza el `alertThreshold` configurado
-5. Un presupuesto puede ser desactivado sin eliminarlo permanentemente
-6. La función de sugerencia analiza el historial de gastos para recomendar límites realistas
-7. La creación automática para el próximo mes facilita la planificación recurrente
 
 ---
 
