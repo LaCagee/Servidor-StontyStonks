@@ -1,5 +1,7 @@
-// controllers/transactionController.js
-const { Transaction, Category } = require('../models');
+// ============================================
+// CONTROLADOR DE TRANSACCIONES - VERSIÓN CORREGIDA CON GOALS
+// ============================================
+const { Transaction, Category, Goal } = require('../models');
 const { Op } = require('sequelize');
 
 // ============================
@@ -7,7 +9,7 @@ const { Op } = require('sequelize');
 // ============================
 exports.createTransaction = async (req, res) => {
   try {
-    const { amount, type, date, description, categoryId, tags } = req.body;
+    const { amount, type, date, description, categoryId, tags, goalId } = req.body;
     const userId = req.userId;
 
     // Validar que la categoría exista y sea del tipo correcto
@@ -26,8 +28,30 @@ exports.createTransaction = async (req, res) => {
         error: `La categoría "${category.name}" es para ${category.type === 'income' ? 'ingresos' : 'gastos'}, no para ${type === 'income' ? 'ingresos' : 'gastos'}`
       });
     }
-    // Asignar fuente de categoría, si viene vacia asignar 'manual' sino usar la proporcionada
+
+    // ========== NUEVO: Validar goalId si se proporciona ==========
+    if (goalId) {
+      const goal = await Goal.findOne({
+        where: { id: goalId, userId }
+      });
+
+      if (!goal) {
+        return res.status(400).json({
+          error: 'Meta no encontrada o no te pertenece'
+        });
+      }
+
+      // Verificar que la meta esté activa
+      if (goal.status !== 'active') {
+        return res.status(400).json({
+          error: `No puedes vincular transacciones a una meta ${goal.status === 'completed' ? 'completada' : goal.status === 'cancelled' ? 'cancelada' : 'pausada'}`
+        });
+      }
+    }
+
+    // Asignar fuente de categoría
     const categorySource = req.body.categorySource || 'manual';
+
     // Crear transacción
     const transaction = await Transaction.create({
       userId,
@@ -37,21 +61,29 @@ exports.createTransaction = async (req, res) => {
       description: description || null,
       categoryId,
       tags: tags || [],
-      categorySource: categorySource // Asignar la fuente de categoría
+      categorySource,
+      goalId: goalId || null  // ← Incluir goalId
     });
 
-    // Obtener transacción completa con categoría
-    const transactionWithCategory = await Transaction.findByPk(transaction.id, {
-      include: [{
-        model: Category,
-        as: 'category',
-        attributes: ['id', 'name', 'icon', 'color', 'type']
-      }]
+    // ========== CORREGIDO: Incluir Goal en la respuesta ==========
+    const transactionWithRelations = await Transaction.findByPk(transaction.id, {
+      include: [
+        {
+          model: Category,
+          as: 'category',
+          attributes: ['id', 'name', 'icon', 'color', 'type']
+        },
+        {
+          model: Goal,
+          as: 'goal',
+          attributes: ['id', 'name', 'targetAmount', 'status']
+        }
+      ]
     });
 
     return res.status(201).json({
       message: 'Transacción creada exitosamente',
-      transaction: transactionWithCategory
+      transaction: transactionWithRelations
     });
 
   } catch (error) {
@@ -75,6 +107,7 @@ exports.getAllTransactions = async (req, res) => {
       startDate,
       endDate,
       search,
+      goalId,  // ← NUEVO: Filtrar por goalId
       page = 1,
       limit = 50
     } = req.query;
@@ -96,30 +129,42 @@ exports.getAllTransactions = async (req, res) => {
     if (startDate || endDate) {
       where.date = {};
       if (startDate) {
-        where.date[Op.gte] = new Date(startDate);  // >= startDate
+        where.date[Op.gte] = new Date(startDate);
       }
       if (endDate) {
-        where.date[Op.lte] = new Date(endDate);    // <= endDate
+        where.date[Op.lte] = new Date(endDate);
       }
     }
 
     if (search) {
       where.description = {
-        [Op.iLike]: `%${search}%`  // Búsqueda case-insensitive
+        [Op.iLike]: `%${search}%`
       };
+    }
+
+    // ========== NUEVO: Filtrar por goalId ==========
+    if (goalId) {
+      where.goalId = goalId;
     }
 
     // Calcular offset para paginación
     const offset = (page - 1) * limit;
 
-    // Obtener transacciones
+    // ========== CORREGIDO: Incluir Goal en la consulta ==========
     const { count, rows: transactions } = await Transaction.findAndCountAll({
       where,
-      include: [{
-        model: Category,
-        as: 'category',
-        attributes: ['id', 'name', 'icon', 'color', 'type']
-      }],
+      include: [
+        {
+          model: Category,
+          as: 'category',
+          attributes: ['id', 'name', 'icon', 'color', 'type']
+        },
+        {
+          model: Goal,
+          as: 'goal',
+          attributes: ['id', 'name', 'targetAmount', 'status']
+        }
+      ],
       order: [['date', 'DESC'], ['createdAt', 'DESC']],
       limit: parseInt(limit),
       offset: parseInt(offset)
@@ -156,13 +201,21 @@ exports.getTransactionById = async (req, res) => {
     const userId = req.userId;
     const { id } = req.params;
 
+    // ========== CORREGIDO: Incluir Goal ==========
     const transaction = await Transaction.findOne({
       where: { id, userId },
-      include: [{
-        model: Category,
-        as: 'category',
-        attributes: ['id', 'name', 'icon', 'color', 'type']
-      }]
+      include: [
+        {
+          model: Category,
+          as: 'category',
+          attributes: ['id', 'name', 'icon', 'color', 'type']
+        },
+        {
+          model: Goal,
+          as: 'goal',
+          attributes: ['id', 'name', 'targetAmount', 'status']
+        }
+      ]
     });
 
     if (!transaction) {
@@ -187,7 +240,7 @@ exports.updateTransaction = async (req, res) => {
   try {
     const userId = req.userId;
     const { id } = req.params;
-    const { amount, type, date, description, categoryId, tags } = req.body;
+    const { amount, type, date, description, categoryId, tags, goalId } = req.body;
 
     // Buscar transacción
     const transaction = await Transaction.findOne({
@@ -232,6 +285,32 @@ exports.updateTransaction = async (req, res) => {
       }
     }
 
+    // ========== NUEVO: Validar goalId si se proporciona ==========
+    if (goalId !== undefined) {
+      if (goalId === null) {
+        // Permitir desvincular (goalId = null)
+        transaction.goalId = null;
+      } else {
+        const goal = await Goal.findOne({
+          where: { id: goalId, userId }
+        });
+
+        if (!goal) {
+          return res.status(400).json({
+            error: 'Meta no encontrada o no te pertenece'
+          });
+        }
+
+        if (goal.status !== 'active') {
+          return res.status(400).json({
+            error: `No puedes vincular transacciones a una meta ${goal.status === 'completed' ? 'completada' : goal.status === 'cancelled' ? 'cancelada' : 'pausada'}`
+          });
+        }
+
+        transaction.goalId = goalId;
+      }
+    }
+
     // Actualizar solo campos enviados
     if (amount !== undefined) transaction.amount = amount;
     if (type !== undefined) transaction.type = type;
@@ -241,13 +320,20 @@ exports.updateTransaction = async (req, res) => {
 
     await transaction.save();
 
-    // Obtener transacción actualizada con categoría
+    // ========== CORREGIDO: Incluir Goal en la respuesta ==========
     const updatedTransaction = await Transaction.findByPk(id, {
-      include: [{
-        model: Category,
-        as: 'category',
-        attributes: ['id', 'name', 'icon', 'color', 'type']
-      }]
+      include: [
+        {
+          model: Category,
+          as: 'category',
+          attributes: ['id', 'name', 'icon', 'color', 'type']
+        },
+        {
+          model: Goal,
+          as: 'goal',
+          attributes: ['id', 'name', 'targetAmount', 'status']
+        }
+      ]
     });
 
     return res.status(200).json({
@@ -316,7 +402,7 @@ exports.restoreTransaction = async (req, res) => {
 
     const transaction = await Transaction.findOne({
       where: { id, userId },
-      paranoid: false  // Esto permite encontrar transacciones soft-deleted 
+      paranoid: false
     });
 
     if (!transaction) {
@@ -331,13 +417,20 @@ exports.restoreTransaction = async (req, res) => {
 
     await transaction.restore();
 
-    // Obtener transacción restaurada con categoría
+    // ========== CORREGIDO: Incluir Goal ==========
     const restoredTransaction = await Transaction.findByPk(id, {
-      include: [{
-        model: Category,
-        as: 'category',
-        attributes: ['id', 'name', 'icon', 'color', 'type']
-      }]
+      include: [
+        {
+          model: Category,
+          as: 'category',
+          attributes: ['id', 'name', 'icon', 'color', 'type']
+        },
+        {
+          model: Goal,
+          as: 'goal',
+          attributes: ['id', 'name', 'targetAmount', 'status']
+        }
+      ]
     });
 
     return res.status(200).json({
@@ -364,15 +457,14 @@ exports.deleteTransactionPermanently = async (req, res) => {
 
     const transaction = await Transaction.findOne({
       where: { id, userId },
-      paranoid: false  // Esto permite encontrar transacciones soft-deleted
-
+      paranoid: false
     });
 
     if (!transaction) {
       return res.status(404).json({ error: 'Transacción no encontrada' });
     }
 
-    await transaction.destroy({ force: true });  // force: true elimina permanentemente
+    await transaction.destroy({ force: true });
 
     return res.status(200).json({
       message: 'Transacción eliminada permanentemente',
