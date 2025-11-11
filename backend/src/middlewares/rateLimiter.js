@@ -14,7 +14,7 @@ const authLimiter = rateLimit({
 // Rate limiter general para API
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100,
+  max: 1000, // Limitar a 100 solicitudes por ventana por IP, Actualmente 1000 para pruebas
   message: {
     error: 'Demasiadas peticiones desde esta IP'
   }
