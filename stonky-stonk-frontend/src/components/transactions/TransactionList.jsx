@@ -27,6 +27,14 @@ export default function TransactionList({ transactions, loading, onEdit, onDelet
     return parseInt(amount || 0).toLocaleString('es-CL');
   };
 
+  // Función para obtener nombre de categoría (compatible con objeto o string)
+  const getCategoryName = (category) => {
+    if (typeof category === 'object' && category !== null) {
+      return category.name || 'Sin categoría';
+    }
+    return category || 'Sin categoría';
+  };
+
   return (
     <Card className="transaction-list">
       <div className="list-header">
@@ -55,7 +63,9 @@ export default function TransactionList({ transactions, loading, onEdit, onDelet
                 </span>
               </div>
               <div className="transaction-meta">
-                <span className="transaction-category">{transaction.category}</span>
+                <span className="transaction-category">
+                  {getCategoryName(transaction.category)}
+                </span>
                 <span className="transaction-separator">•</span>
                 <span className="transaction-date">{formatDate(transaction.date)}</span>
               </div>

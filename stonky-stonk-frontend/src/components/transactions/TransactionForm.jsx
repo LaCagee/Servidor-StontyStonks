@@ -1,39 +1,21 @@
 import { useState, useEffect } from 'react';
 import Button from '../ui/Button';
-import { X } from 'lucide-react';
+import { X, Lightbulb } from 'lucide-react';
 
-const CATEGORIES_BY_TYPE = {
-  income: [
-    'Salario',
-    'Freelance',
-    'Inversiones',
-    'Ventas',
-    'Otros Ingresos'
-  ],
-  expense: [
-    'Alimentación',
-    'Transporte',
-    'Vivienda',
-    'Servicios',
-    'Entretenimiento',
-    'Salud',
-    'Educación',
-    'Ropa',
-    'Otros Gastos'
-  ]
-};
+const API_BASE_URL = 'http://localhost:3000/api';
 
-export default function TransactionForm({ transaction, onSave, onCancel }) {
+export default function TransactionForm({ transaction, categories = [], onSave, onCancel }) {
   const [formData, setFormData] = useState({
     type: 'expense',
     amount: '',
     description: '',
-    category: '',
+    categoryId: '',
     date: new Date().toISOString().split('T')[0]
   });
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [suggestingCategory, setSuggestingCategory] = useState(false);
 
   // Si estamos editando, cargar los datos
   useEffect(() => {
@@ -42,11 +24,19 @@ export default function TransactionForm({ transaction, onSave, onCancel }) {
         type: transaction.type,
         amount: transaction.amount.toString(),
         description: transaction.description,
-        category: transaction.category,
+        categoryId: transaction.categoryId.toString(),
         date: transaction.date
       });
     }
   }, [transaction]);
+
+  const getHeaders = () => {
+    const token = localStorage.getItem('token');
+    return {
+      'Authorization': token ? `Bearer ${token}` : '',
+      'Content-Type': 'application/json'
+    };
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -54,11 +44,68 @@ export default function TransactionForm({ transaction, onSave, onCancel }) {
       ...prev,
       [name]: value,
       // Resetear categoría si cambia el tipo
-      ...(name === 'type' ? { category: '' } : {})
+      ...(name === 'type' ? { categoryId: '' } : {})
     }));
     // Limpiar error del campo
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  // Manejar cambio de tipo con switch
+  const handleTypeToggle = () => {
+    const newType = formData.type === 'expense' ? 'income' : 'expense';
+    setFormData(prev => ({
+      ...prev,
+      type: newType,
+      categoryId: '' // Resetear categoría
+    }));
+  };
+
+  // Obtener sugerencia de categoría
+  const handleGetCategorySuggestion = async () => {
+    if (!formData.description.trim()) {
+      alert('Por favor, escribe una descripción primero');
+      return;
+    }
+
+    setSuggestingCategory(true);
+    try {
+      const headers = getHeaders();
+
+      if (!headers.Authorization) {
+        throw new Error('No hay token de autenticación');
+      }
+
+      const encodedDescription = encodeURIComponent(formData.description);
+      const url = `${API_BASE_URL}/suggestions/best?description=${encodedDescription}&type=${formData.type}`;
+
+      console.log('💡 Solicitando sugerencia de categoría:', url);
+
+      const response = await fetch(url, { headers });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al obtener sugerencia');
+      }
+
+      const data = await response.json();
+      console.log('✅ Sugerencia recibida:', data);
+
+      if (data.suggestion && data.suggestion.categoryId) {
+        setFormData(prev => ({
+          ...prev,
+          categoryId: data.suggestion.categoryId.toString()
+        }));
+        console.log('✅ Categoría sugerida:', data.suggestion.categoryName);
+      } else {
+        alert('No se pudo obtener una sugerencia. Por favor, selecciona manualmente.');
+      }
+    } catch (error) {
+      console.error('❌ Error al obtener sugerencia:', error);
+      alert('Error al obtener sugerencia: ' + error.message);
+    } finally {
+      setSuggestingCategory(false);
     }
   };
 
@@ -73,8 +120,8 @@ export default function TransactionForm({ transaction, onSave, onCancel }) {
       newErrors.description = 'La descripción es requerida';
     }
 
-    if (!formData.category) {
-      newErrors.category = 'La categoría es requerida';
+    if (!formData.categoryId) {
+      newErrors.categoryId = 'La categoría es requerida';
     }
 
     if (!formData.date) {
@@ -94,19 +141,21 @@ export default function TransactionForm({ transaction, onSave, onCancel }) {
 
     setLoading(true);
 
-    // Simular llamada al backend
-    await new Promise(resolve => setTimeout(resolve, 500));
-
+    // Preparar datos para enviar según la API
     const transactionData = {
-      ...formData,
-      amount: parseFloat(formData.amount)
+      type: formData.type,
+      amount: parseFloat(formData.amount),
+      description: formData.description,
+      categoryId: parseInt(formData.categoryId),
+      date: formData.date
     };
 
     onSave(transactionData);
     setLoading(false);
   };
 
-  const categories = CATEGORIES_BY_TYPE[formData.type];
+  // Filtrar categorías por tipo seleccionado
+  const filteredCategories = categories.filter(cat => cat.type === formData.type);
 
   return (
     <div className="transaction-form">
@@ -118,24 +167,32 @@ export default function TransactionForm({ transaction, onSave, onCancel }) {
       </div>
 
       <form onSubmit={handleSubmit}>
-        {/* Tipo de Transacción */}
+        {/* Tipo de Transacción - SWITCH */}
         <div className="form-group">
           <label>Tipo de Transacción</label>
-          <div className="type-selector">
+          <div className="type-switch-container">
             <button
               type="button"
-              className={`type-button ${formData.type === 'income' ? 'active income' : ''}`}
-              onClick={() => handleChange({ target: { name: 'type', value: 'income' } })}
+              className={`type-switch ${formData.type === 'expense' ? 'active' : ''}`}
+              onClick={handleTypeToggle}
             >
-              Ingreso
+              <span className="switch-label">Gasto</span>
+              
             </button>
+            <div className="type-switch-toggle">
+              <div className={`toggle-slider ${formData.type === 'income' ? 'income' : 'expense'}`}></div>
+            </div>
             <button
               type="button"
-              className={`type-button ${formData.type === 'expense' ? 'active expense' : ''}`}
-              onClick={() => handleChange({ target: { name: 'type', value: 'expense' } })}
+              className={`type-switch ${formData.type === 'income' ? 'active' : ''}`}
+              onClick={handleTypeToggle}
             >
-              Gasto
+              
+              <span className="switch-label">Ingreso</span>
             </button>
+          </div>
+          <div className="type-indicator">
+            {formData.type === 'expense' ? ' Registrando un Gasto' : ' Registrando un Ingreso'}
           </div>
         </div>
 
@@ -174,22 +231,34 @@ export default function TransactionForm({ transaction, onSave, onCancel }) {
           {errors.description && <span className="error-message">{errors.description}</span>}
         </div>
 
-        {/* Categoría */}
+        {/* Categoría con Botón de Sugerencia */}
         <div className="form-group">
-          <label htmlFor="category">Categoría</label>
+          <div className="category-header">
+            <label htmlFor="categoryId">Categoría</label>
+            <button
+              type="button"
+              className="btn-suggestion"
+              onClick={handleGetCategorySuggestion}
+              disabled={suggestingCategory || !formData.description.trim()}
+              title={formData.description.trim() ? 'Obtener sugerencia automática' : 'Escribe una descripción primero'}
+            >
+              <Lightbulb size={16} />
+              {suggestingCategory ? 'Sugiriendo...' : 'Sugerir'}
+            </button>
+          </div>
           <select
-            id="category"
-            name="category"
-            value={formData.category}
+            id="categoryId"
+            name="categoryId"
+            value={formData.categoryId}
             onChange={handleChange}
-            className={errors.category ? 'error' : ''}
+            className={errors.categoryId ? 'error' : ''}
           >
             <option value="">Selecciona una categoría</option>
-            {categories.map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
+            {filteredCategories.map(cat => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
             ))}
           </select>
-          {errors.category && <span className="error-message">{errors.category}</span>}
+          {errors.categoryId && <span className="error-message">{errors.categoryId}</span>}
         </div>
 
         {/* Fecha */}

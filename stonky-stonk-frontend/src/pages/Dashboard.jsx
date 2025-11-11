@@ -5,35 +5,125 @@ import { DollarSign, ArrowUpCircle, ArrowDownCircle, Target, TrendingUp, CreditC
 
 export default function Dashboard() {
   const [transactions, setTransactions] = useState([]);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [monthlyTrend, setMonthlyTrend] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const loadData = async () => {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      setTransactions([
-        { id: 1, type: 'expense', amount: 45000, description: 'Supermercado', category: 'Alimentación', date: '2024-01-15' },
-        { id: 2, type: 'income', amount: 150000, description: 'Salario', category: 'Trabajo', date: '2024-01-01' },
-        { id: 3, type: 'expense', amount: 12000, description: 'Uber', category: 'Transporte', date: '2024-01-10' },
-        { id: 4, type: 'income', amount: 25000, description: 'Freelance', category: 'Trabajo', date: '2024-01-05' },
-        { id: 5, type: 'expense', amount: 35000, description: 'Restaurante', category: 'Entretenimiento', date: '2024-01-12' }
-      ]);
-      setLoading(false);
+  // URL base de la API
+  const API_BASE_URL = 'http://localhost:3000/api';
+
+  // Función para obtener headers de autenticación
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('token');
+    return {
+      'Authorization': token ? `Bearer ${token}` : '',
+      'Content-Type': 'application/json'
     };
+  };
+
+  // Función mejorada para hacer fetch
+  const apiFetch = async (endpoint) => {
+    const url = `${API_BASE_URL}${endpoint}`;
     
-    loadData();
+    try {
+      const response = await fetch(url, {
+        headers: getAuthHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error(`Error fetching ${endpoint}:`, error);
+      throw error;
+    }
+  };
+
+  // Cargar datos de forma secuencial para mejor control
+  const loadRealData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No hay token de autenticación. Por favor, inicia sesión primero.');
+      }
+
+      console.log('🚀 Iniciando carga de datos del dashboard...');
+
+      // Cargar datos secuencialmente para mejor control de errores
+      const dashboardResult = await apiFetch('/dashboard/overview');
+      console.log('✅ Dashboard overview cargado:', dashboardResult);
+
+      const transactionsResult = await apiFetch('/transactions?page=1&limit=5&sort=date:desc');
+      console.log('✅ Transacciones cargadas:', transactionsResult);
+
+      const monthlyTrendResult = await apiFetch('/dashboard/monthly-trend?months=6');
+      console.log('✅ Monthly trend cargado:', monthlyTrendResult);
+
+      // Establecer los datos
+      setDashboardData(dashboardResult.overview);
+      setTransactions(transactionsResult.transactions || []);
+      setMonthlyTrend(monthlyTrendResult.trend || []);
+
+    } catch (err) {
+      console.error('❌ Error cargando datos:', err);
+      
+      let errorMessage = 'Error al cargar los datos del dashboard';
+      
+      if (err.message.includes('Failed to fetch')) {
+        errorMessage = `
+          No se puede conectar con el servidor backend. Por favor verifica:
+          1. 🖥️  El backend esté ejecutándose en http://localhost:3000
+          2. 🔄 El servidor esté respondiendo correctamente
+          3. 🌐 No haya problemas de red o CORS
+        `;
+      } else if (err.message.includes('HTTP error')) {
+        errorMessage = `Error del servidor: ${err.message}`;
+      }
+
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // useEffect para ejecutar loadRealData al montar el componente
+  useEffect(() => {
+    loadRealData();
   }, []);
 
-  const balance = transactions.reduce((acc, t) => 
-    t.type === 'income' ? acc + t.amount : acc - t.amount, 0
-  );
+  // Calcular balances
+  const calculateBalances = () => {
+    if (dashboardData) {
+      return {
+        balance: dashboardData.balance?.currentBalance || 0,
+        income: dashboardData.currentMonth?.income || 0,
+        expenses: dashboardData.currentMonth?.expense || 0
+      };
+    } else {
+      const balance = transactions.reduce((acc, t) => 
+        t.type === 'income' ? acc + t.amount : acc - t.amount, 0
+      );
 
-  const income = transactions
-    .filter(t => t.type === 'income')
-    .reduce((acc, t) => acc + t.amount, 0);
+      const income = transactions
+        .filter(t => t.type === 'income')
+        .reduce((acc, t) => acc + t.amount, 0);
 
-  const expenses = transactions
-    .filter(t => t.type === 'expense')
-    .reduce((acc, t) => acc + t.amount, 0);
+      const expenses = transactions
+        .filter(t => t.type === 'expense')
+        .reduce((acc, t) => acc + t.amount, 0);
+
+      return { balance, income, expenses };
+    }
+  };
+
+  const { balance, income, expenses } = calculateBalances();
 
   if (loading) {
     return (
@@ -41,6 +131,22 @@ export default function Dashboard() {
         <div className="loading-screen">
           <div className="loading-spinner"></div>
           <p className="loading-message">Cargando tu dashboard financiero...</p>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <MainLayout title="Panel Principal" balance={0}>
+        <div className="error-screen">
+          <h3>❌ Error de Conexión</h3>
+          <p className="error-message">{error}</p>
+          <div className="error-actions">
+            <button onClick={loadRealData} className="btn-depth">
+              🔄 Reintentar
+            </button>
+          </div>
         </div>
       </MainLayout>
     );
@@ -121,36 +227,75 @@ export default function Dashboard() {
         </div>
 
         {/* Sección de Gráficos y Transacciones */}
-        <div className="content-grid">
-          {/* Gráfico de Resumen */}
-          <Card title="Resumen Mensual" className="chart-section">
-            <div className="chart-placeholder">
-              <div className="chart-bars">
-                <div className="chart-bar income" style={{ height: '80%' }}></div>
-                <div className="chart-bar expense" style={{ height: '60%' }}></div>
-                <div className="chart-bar income" style={{ height: '70%' }}></div>
-                <div className="chart-bar expense" style={{ height: '50%' }}></div>
-                <div className="chart-bar income" style={{ height: '90%' }}></div>
-              </div>
-              <div className="chart-labels">
-                <span>Ene</span>
-                <span>Feb</span>
-                <span>Mar</span>
-                <span>Abr</span>
-                <span>May</span>
-              </div>
+<div className="content-grid">
+  {/* Gráfico de Resumen Mensual */}
+  <Card title="Resumen Mensual" className="chart-section">
+    {monthlyTrend && monthlyTrend.length > 0 ? (
+      <div className="chart-container">
+        <div className="chart-bars-container">
+          <div className="chart-bars">
+            {monthlyTrend.map((month, index) => {
+              // Calcular alturas relativas
+              const maxValue = Math.max(
+                ...monthlyTrend.map(m => Math.max(m.income || 0, m.expense || 0))
+              );
+              
+              const incomeHeight = maxValue > 0 ? ((month.income || 0) / maxValue) * 100 : 5;
+              const expenseHeight = maxValue > 0 ? ((month.expense || 0) / maxValue) * 100 : 5;
+
+              return (
+                <div key={index} className="chart-column">
+                  <div className="bars-wrapper">
+                    <div 
+                      className="bar income-bar" 
+                      style={{ height: `${incomeHeight}%` }}
+                      title={`${month.monthName}: Ingresos $${(month.income || 0).toLocaleString('es-CL')}`}
+                    ></div>
+                    <div 
+                      className="bar expense-bar" 
+                      style={{ height: `${expenseHeight}%` }}
+                      title={`${month.monthName}: Gastos $${(month.expense || 0).toLocaleString('es-CL')}`}
+                    ></div>
+                  </div>
+                  <div className="month-label">
+                    {month.monthName ? month.monthName.substring(0, 3).toLowerCase() : `M${index + 1}`}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        
+        <div className="chart-info">
+          <div className="chart-legend">
+            <div className="legend-item">
+              <div className="legend-dot income-dot"></div>
+              <span>Ingresos</span>
             </div>
-            <div className="chart-legend">
-              <div className="legend-item">
-                <div className="legend-color income"></div>
-                <span>Ingresos</span>
-              </div>
-              <div className="legend-item">
-                <div className="legend-color expense"></div>
-                <span>Gastos</span>
-              </div>
+            <div className="legend-item">
+              <div className="legend-dot expense-dot"></div>
+              <span>Gastos</span>
             </div>
-          </Card>
+          </div>
+          
+          <div className="chart-totals">
+            <div className="total-item">
+              <span className="total-label">Total Ingresos:</span>
+              <span className="total-value income">${monthlyTrend.reduce((sum, month) => sum + (month.income || 0), 0).toLocaleString('es-CL')}</span>
+            </div>
+            <div className="total-item">
+              <span className="total-label">Total Gastos:</span>
+              <span className="total-value expense">${monthlyTrend.reduce((sum, month) => sum + (month.expense || 0), 0).toLocaleString('es-CL')}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    ) : (
+      <div className="chart-loading">
+        <p>Cargando datos del gráfico...</p>
+      </div>
+    )}
+  </Card>
 
           {/* Transacciones Recientes */}
           <Card title="Transacciones Recientes" className="transactions-section" action={
@@ -175,12 +320,21 @@ export default function Dashboard() {
                       </p>
                     </div>
                     <div className="transaction-meta">
-                      <span className="transaction-category">{transaction.category}</span>
-                      <span className="transaction-date">{transaction.date}</span>
+                      <span className="transaction-category">
+                        {transaction.category?.name || 'Sin categoría'}
+                      </span>
+                      <span className="transaction-date">
+                        {new Date(transaction.date).toLocaleDateString('es-CL')}
+                      </span>
                     </div>
                   </div>
                 </div>
               ))}
+              {transactions.length === 0 && (
+                <div className="no-transactions">
+                  <p>No hay transacciones recientes</p>
+                </div>
+              )}
             </div>
           </Card>
         </div>
@@ -241,42 +395,27 @@ export default function Dashboard() {
 
           <Card title="Resumen por Categoría" className="categories-section">
             <div className="categories-list">
-              <div className="category-item">
-                <div className="category-info">
-                  <span className="category-name">Alimentación</span>
-                  <span className="category-amount">$45.000</span>
+              {dashboardData?.topCategories?.map((category, index) => (
+                <div key={index} className="category-item">
+                  <div className="category-info">
+                    <span className="category-name">{category.categoryName}</span>
+                    <span className="category-amount">${category.total?.toLocaleString('es-CL') || '0'}</span>
+                  </div>
+                  <div className="category-bar">
+                    <div 
+                      className="category-fill" 
+                      style={{ 
+                        width: `${category.percentage || 0}%`,
+                        backgroundColor: category.categoryColor || '#ccc'
+                      }}
+                    ></div>
+                  </div>
                 </div>
-                <div className="category-bar">
-                  <div className="category-fill" style={{ width: '35%' }}></div>
+              )) || (
+                <div className="no-categories">
+                  <p>No hay datos de categorías disponibles</p>
                 </div>
-              </div>
-              <div className="category-item">
-                <div className="category-info">
-                  <span className="category-name">Transporte</span>
-                  <span className="category-amount">$12.000</span>
-                </div>
-                <div className="category-bar">
-                  <div className="category-fill" style={{ width: '15%' }}></div>
-                </div>
-              </div>
-              <div className="category-item">
-                <div className="category-info">
-                  <span className="category-name">Entretenimiento</span>
-                  <span className="category-amount">$35.000</span>
-                </div>
-                <div className="category-bar">
-                  <div className="category-fill" style={{ width: '25%' }}></div>
-                </div>
-              </div>
-              <div className="category-item">
-                <div className="category-info">
-                  <span className="category-name">Servicios</span>
-                  <span className="category-amount">$28.000</span>
-                </div>
-                <div className="category-bar">
-                  <div className="category-fill" style={{ width: '20%' }}></div>
-                </div>
-              </div>
+              )}
             </div>
           </Card>
         </div>
