@@ -5,42 +5,133 @@ import { DollarSign, ArrowUpCircle, ArrowDownCircle, Target, TrendingUp, CreditC
 
 export default function Dashboard() {
   const [transactions, setTransactions] = useState([]);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [monthlyTrend, setMonthlyTrend] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const API_BASE_URL = 'http://localhost:3000/api';
+
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('token');
+    return {
+      'Authorization': token ? `Bearer ${token}` : '',
+      'Content-Type': 'application/json'
+    };
+  };
+
+  const apiFetch = async (endpoint) => {
+    const url = `${API_BASE_URL}${endpoint}`;
+    
+    try {
+      const response = await fetch(url, {
+        headers: getAuthHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error(`Error fetching ${endpoint}:`, error);
+      throw error;
+    }
+  };
+
+  const loadRealData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No hay token de autenticación. Por favor, inicia sesión primero.');
+      }
+
+      console.log('🚀 Iniciando carga de datos del dashboard...');
+
+      const dashboardResult = await apiFetch('/dashboard/overview');
+      const transactionsResult = await apiFetch('/transactions?page=1&limit=5&sort=date:desc');
+      const monthlyTrendResult = await apiFetch('/dashboard/monthly-trend?months=6');
+
+      setDashboardData(dashboardResult.overview);
+      setTransactions(transactionsResult.transactions || []);
+      setMonthlyTrend(monthlyTrendResult.trend || []);
+
+    } catch (err) {
+      console.error('❌ Error cargando datos:', err);
+      
+      let errorMessage = 'Error al cargar los datos del dashboard';
+      
+      if (err.message.includes('Failed to fetch')) {
+        errorMessage = `No se puede conectar con el servidor backend. Por favor verifica que esté ejecutándose en http://localhost:3000`;
+      } else if (err.message.includes('HTTP error')) {
+        errorMessage = `Error del servidor: ${err.message}`;
+      }
+
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const loadData = async () => {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      setTransactions([
-        { id: 1, type: 'expense', amount: 45000, description: 'Supermercado', category: 'Alimentación', date: '2024-01-15' },
-        { id: 2, type: 'income', amount: 150000, description: 'Salario', category: 'Trabajo', date: '2024-01-01' },
-        { id: 3, type: 'expense', amount: 12000, description: 'Uber', category: 'Transporte', date: '2024-01-10' },
-        { id: 4, type: 'income', amount: 25000, description: 'Freelance', category: 'Trabajo', date: '2024-01-05' },
-        { id: 5, type: 'expense', amount: 35000, description: 'Restaurante', category: 'Entretenimiento', date: '2024-01-12' }
-      ]);
-      setLoading(false);
-    };
-    
-    loadData();
+    loadRealData();
   }, []);
 
-  const balance = transactions.reduce((acc, t) => 
-    t.type === 'income' ? acc + t.amount : acc - t.amount, 0
-  );
+  const calculateBalances = () => {
+    if (dashboardData) {
+      return {
+        balance: dashboardData.balance?.currentBalance || 0,
+        income: dashboardData.currentMonth?.income || 0,
+        expenses: dashboardData.currentMonth?.expense || 0
+      };
+    } else {
+      const balance = transactions.reduce((acc, t) => 
+        t.type === 'income' ? acc + t.amount : acc - t.amount, 0
+      );
 
-  const income = transactions
-    .filter(t => t.type === 'income')
-    .reduce((acc, t) => acc + t.amount, 0);
+      const income = transactions
+        .filter(t => t.type === 'income')
+        .reduce((acc, t) => acc + t.amount, 0);
 
-  const expenses = transactions
-    .filter(t => t.type === 'expense')
-    .reduce((acc, t) => acc + t.amount, 0);
+      const expenses = transactions
+        .filter(t => t.type === 'expense')
+        .reduce((acc, t) => acc + t.amount, 0);
+
+      return { balance, income, expenses };
+    }
+  };
+
+  const { balance, income, expenses } = calculateBalances();
 
   if (loading) {
     return (
       <MainLayout title="Panel Principal" balance={0}>
-        <div className="loading-screen">
-          <div className="loading-spinner"></div>
-          <p className="loading-message">Cargando tu dashboard financiero...</p>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-400 mx-auto mb-4"></div>
+            <p className="text-gray-400">Cargando tu dashboard financiero...</p>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <MainLayout title="Panel Principal" balance={0}>
+        <div className="card bg-red-900 bg-opacity-20 border-red-700 p-8 max-w-2xl mx-auto">
+          <h3 className="text-2xl font-bold text-red-400 mb-4">❌ Error de Conexión</h3>
+          <p className="text-gray-300 mb-6">{error}</p>
+          <button 
+            onClick={loadRealData} 
+            className="btn btn-primary"
+          >
+            🔄 Reintentar
+          </button>
         </div>
       </MainLayout>
     );
@@ -48,14 +139,16 @@ export default function Dashboard() {
 
   return (
     <MainLayout title="Panel Principal" balance={balance}>
-      <div className="dashboard-wrapper">
-        {/* Header con Bienvenida */}
-        <div className="dashboard-header">
-          <div className="welcome-section">
-            <h1 className="welcome-title">Bienvenido de vuelta</h1>
-            <p className="welcome-subtitle">Aquí está tu resumen financiero</p>
+      <div className="space-y-6">
+        {/* Header de Bienvenida */}
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+          <div>
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">
+              Bienvenido de vuelta
+            </h2>
+            <p className="text-gray-400">Aquí está tu resumen financiero</p>
           </div>
-          <div className="date-display">
+          <div className="text-gray-400 text-sm md:text-base">
             {new Date().toLocaleDateString('es-CL', { 
               weekday: 'long', 
               year: 'numeric', 
@@ -65,221 +158,223 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Grid de Métricas Principales */}
-        <div className="metrics-grid">
-          <Card variant="stonky-primary" className="metric-card">
-            <div className="metric-content">
-              <div className="metric-icon-wrapper">
-                <DollarSign className="metric-icon" />
+        {/* Grid de Métricas Principales - Responsive */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+          {/* Saldo Total */}
+          <div className="card card-gradient hover:shadow-lg">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <p className="stat-label">Saldo Total</p>
+                <p className="text-3xl md:text-2xl font-bold text-white mt-2">
+                  ${balance.toLocaleString('es-CL')}
+                </p>
               </div>
-              <div className="metric-info">
-                <p className="metric-label">Saldo Total</p>
-                <p className="metric-value">${balance.toLocaleString('es-CL')}</p>
-                <p className="metric-trend positive">+12% vs mes anterior</p>
+              <div className="stat-icon income">
+                <DollarSign className="w-6 h-6" />
               </div>
             </div>
-          </Card>
+            <p className="stat-change positive text-sm">
+              <span>↑</span> +12% vs mes anterior
+            </p>
+          </div>
 
-          <Card variant="stonky-success" className="metric-card">
-            <div className="metric-content">
-              <div className="metric-icon-wrapper">
-                <TrendingUp className="metric-icon" />
+          {/* Ingresos */}
+          <div className="card card-success hover:shadow-lg">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <p className="stat-label">Ingresos</p>
+                <p className="text-3xl md:text-2xl font-bold text-white mt-2">
+                  ${income.toLocaleString('es-CL')}
+                </p>
               </div>
-              <div className="metric-info">
-                <p className="metric-label">Ingresos</p>
-                <p className="metric-value">${income.toLocaleString('es-CL')}</p>
-                <p className="metric-trend positive">+8% vs mes anterior</p>
+              <div className="stat-icon income">
+                <TrendingUp className="w-6 h-6" />
               </div>
             </div>
-          </Card>
+            <p className="stat-change positive text-sm">
+              <span>↑</span> +8% vs mes anterior
+            </p>
+          </div>
 
-          <Card variant="stonky-warning" className="metric-card">
-            <div className="metric-content">
-              <div className="metric-icon-wrapper">
-                <CreditCard className="metric-icon" />
+          {/* Gastos */}
+          <div className="card bg-gradient-to-br from-red-900 to-red-800 border-red-700 hover:shadow-lg">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <p className="stat-label">Gastos</p>
+                <p className="text-3xl md:text-2xl font-bold text-white mt-2">
+                  ${expenses.toLocaleString('es-CL')}
+                </p>
               </div>
-              <div className="metric-info">
-                <p className="metric-label">Gastos</p>
-                <p className="metric-value">${expenses.toLocaleString('es-CL')}</p>
-                <p className="metric-trend negative">-5% vs mes anterior</p>
+              <div className="stat-icon expense">
+                <CreditCard className="w-6 h-6" />
               </div>
             </div>
-          </Card>
+            <p className="stat-change negative text-sm">
+              <span>↓</span> -5% vs mes anterior
+            </p>
+          </div>
 
-          <Card variant="stonky-info" className="metric-card">
-            <div className="metric-content">
-              <div className="metric-icon-wrapper">
-                <Target className="metric-icon" />
+          {/* Metas Activas */}
+          <div className="card bg-gradient-to-br from-blue-900 to-blue-800 border-blue-700 hover:shadow-lg">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <p className="stat-label">Metas Activas</p>
+                <p className="text-3xl md:text-2xl font-bold text-white mt-2">3</p>
               </div>
-              <div className="metric-info">
-                <p className="metric-label">Metas Activas</p>
-                <p className="metric-value">3</p>
-                <p className="metric-trend">75% completado</p>
+              <div className="stat-icon goal">
+                <Target className="w-6 h-6" />
               </div>
             </div>
-          </Card>
+            <p className="stat-change text-blue-300 text-sm">
+              75% completado
+            </p>
+          </div>
         </div>
 
-        {/* Sección de Gráficos y Transacciones */}
-        <div className="content-grid">
-          {/* Gráfico de Resumen */}
-          <Card title="Resumen Mensual" className="chart-section">
-            <div className="chart-placeholder">
-              <div className="chart-bars">
-                <div className="chart-bar income" style={{ height: '80%' }}></div>
-                <div className="chart-bar expense" style={{ height: '60%' }}></div>
-                <div className="chart-bar income" style={{ height: '70%' }}></div>
-                <div className="chart-bar expense" style={{ height: '50%' }}></div>
-                <div className="chart-bar income" style={{ height: '90%' }}></div>
-              </div>
-              <div className="chart-labels">
-                <span>Ene</span>
-                <span>Feb</span>
-                <span>Mar</span>
-                <span>Abr</span>
-                <span>May</span>
-              </div>
-            </div>
-            <div className="chart-legend">
-              <div className="legend-item">
-                <div className="legend-color income"></div>
-                <span>Ingresos</span>
-              </div>
-              <div className="legend-item">
-                <div className="legend-color expense"></div>
-                <span>Gastos</span>
-              </div>
-            </div>
-          </Card>
+        {/* Sección de Contenido - Gráfico y Transacciones */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Gráfico de Resumen Mensual - Ocupa 2 columnas en desktop */}
+          <div className="lg:col-span-2">
+            <Card title="Resumen Mensual" className="h-full">
+              {monthlyTrend && monthlyTrend.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="flex flex-col sm:flex-row gap-6">
+                    {/* Gráfico de barras */}
+                    <div className="flex-1 flex items-end justify-around gap-2 h-64">
+                      {monthlyTrend.map((month, index) => {
+                        const maxValue = Math.max(
+                          ...monthlyTrend.map(m => Math.max(m.income || 0, m.expense || 0))
+                        );
+                        
+                        const incomeHeight = maxValue > 0 ? ((month.income || 0) / maxValue) * 100 : 5;
+                        const expenseHeight = maxValue > 0 ? ((month.expense || 0) / maxValue) * 100 : 5;
+
+                        return (
+                          <div key={index} className="flex-1 flex flex-col items-center gap-1">
+                            <div className="flex gap-1 h-full items-end w-full justify-center">
+                              <div 
+                                className="bg-gradient-to-t from-green-500 to-green-400 rounded-t-sm flex-1 max-w-2"
+                                style={{ height: `${incomeHeight}%` }}
+                              />
+                              <div 
+                                className="bg-gradient-to-t from-red-500 to-red-400 rounded-t-sm flex-1 max-w-2"
+                                style={{ height: `${expenseHeight}%` }}
+                              />
+                            </div>
+                            <p className="text-xs text-gray-400 mt-2 text-center">
+                              {new Date(month.month).toLocaleDateString('es-CL', { month: 'short' })}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Leyenda */}
+                    <div className="flex flex-row sm:flex-col gap-4 sm:gap-6 justify-center sm:justify-start">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-gradient-to-br from-green-500 to-green-400 rounded"></div>
+                        <span className="text-sm text-gray-300">Ingresos</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-gradient-to-br from-red-500 to-red-400 rounded"></div>
+                        <span className="text-sm text-gray-300">Gastos</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-gray-400">No hay datos de tendencia mensual disponibles</p>
+                </div>
+              )}
+            </Card>
+          </div>
 
           {/* Transacciones Recientes */}
-          <Card title="Transacciones Recientes" className="transactions-section" action={
-            <button className="view-all-button btn-depth">Ver todas</button>
-          }>
-            <div className="transactions-list">
-              {transactions.map((transaction) => (
-                <div key={transaction.id} className="transaction-item">
-                  <div className="transaction-icon-container">
-                    <div className={`transaction-icon ${transaction.type}`}>
-                      {transaction.type === 'income' 
-                        ? <ArrowUpCircle className="icon" />
-                        : <ArrowDownCircle className="icon" />
-                      }
-                    </div>
-                  </div>
-                  <div className="transaction-details">
-                    <div className="transaction-main">
-                      <p className="transaction-description">{transaction.description}</p>
-                      <p className={`transaction-amount ${transaction.type}`}>
+          <div>
+            <Card title="Transacciones Recientes" className="h-full">
+              {transactions && transactions.length > 0 ? (
+                <div className="space-y-3">
+                  {transactions.map((transaction) => (
+                    <div key={transaction.id} className="flex items-center justify-between p-3 bg-gray-800 bg-opacity-30 rounded-lg hover:bg-opacity-50 transition-all">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                          transaction.type === 'income' 
+                            ? 'bg-green-500 bg-opacity-20' 
+                            : 'bg-red-500 bg-opacity-20'
+                        }`}>
+                          {transaction.type === 'income' ? (
+                            <ArrowUpCircle className="w-5 h-5 text-green-400" />
+                          ) : (
+                            <ArrowDownCircle className="w-5 h-5 text-red-400" />
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-white truncate">
+                            {transaction.description || transaction.category}
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            {new Date(transaction.date).toLocaleDateString('es-CL')}
+                          </p>
+                        </div>
+                      </div>
+                      <span className={`text-sm font-semibold whitespace-nowrap ml-2 ${
+                        transaction.type === 'income' 
+                          ? 'text-green-400' 
+                          : 'text-red-400'
+                      }`}>
                         {transaction.type === 'income' ? '+' : '-'}${transaction.amount.toLocaleString('es-CL')}
-                      </p>
+                      </span>
                     </div>
-                    <div className="transaction-meta">
-                      <span className="transaction-category">{transaction.category}</span>
-                      <span className="transaction-date">{transaction.date}</span>
-                    </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </Card>
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-gray-400">No hay transacciones disponibles</p>
+                </div>
+              )}
+            </Card>
+          </div>
         </div>
 
-        {/* Sección de Metas y Estadísticas */}
-        <div className="secondary-grid">
-          <Card title="Metas de Ahorro" className="goals-section">
-            <div className="goals-list">
-              <div className="goal-item">
-                <div className="goal-header">
-                  <h4 className="goal-title">Viaje a Europa</h4>
-                  <span className="goal-percentage">45%</span>
-                </div>
-                <div className="goal-progress">
-                  <div className="progress-bar">
-                    <div className="progress-fill" style={{ width: '45%' }}></div>
-                  </div>
-                </div>
-                <div className="goal-stats">
-                  <span className="goal-current">$2.250.000</span>
-                  <span className="goal-target">de $5.000.000</span>
-                </div>
-              </div>
-
-              <div className="goal-item">
-                <div className="goal-header">
-                  <h4 className="goal-title">Nueva Laptop</h4>
-                  <span className="goal-percentage">60%</span>
-                </div>
-                <div className="goal-progress">
-                  <div className="progress-bar">
-                    <div className="progress-fill" style={{ width: '60%' }}></div>
-                  </div>
-                </div>
-                <div className="goal-stats">
-                  <span className="goal-current">$480.000</span>
-                  <span className="goal-target">de $800.000</span>
-                </div>
-              </div>
-
-              <div className="goal-item">
-                <div className="goal-header">
-                  <h4 className="goal-title">Fondo Emergencia</h4>
-                  <span className="goal-percentage">30%</span>
-                </div>
-                <div className="goal-progress">
-                  <div className="progress-bar">
-                    <div className="progress-fill" style={{ width: '30%' }}></div>
-                  </div>
-                </div>
-                <div className="goal-stats">
-                  <span className="goal-current">$900.000</span>
-                  <span className="goal-target">de $3.000.000</span>
-                </div>
-              </div>
+        {/* Sección de Análisis - Solo en desktop si tenemos datos */}
+        {monthlyTrend && monthlyTrend.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+            <div className="card">
+              <p className="stat-label mb-2">Promedio Ingresos</p>
+              <p className="text-2xl font-bold text-green-400">
+                ${(
+                  monthlyTrend.reduce((acc, m) => acc + (m.income || 0), 0) / monthlyTrend.length
+                ).toLocaleString('es-CL')}
+              </p>
             </div>
-          </Card>
-
-          <Card title="Resumen por Categoría" className="categories-section">
-            <div className="categories-list">
-              <div className="category-item">
-                <div className="category-info">
-                  <span className="category-name">Alimentación</span>
-                  <span className="category-amount">$45.000</span>
-                </div>
-                <div className="category-bar">
-                  <div className="category-fill" style={{ width: '35%' }}></div>
-                </div>
-              </div>
-              <div className="category-item">
-                <div className="category-info">
-                  <span className="category-name">Transporte</span>
-                  <span className="category-amount">$12.000</span>
-                </div>
-                <div className="category-bar">
-                  <div className="category-fill" style={{ width: '15%' }}></div>
-                </div>
-              </div>
-              <div className="category-item">
-                <div className="category-info">
-                  <span className="category-name">Entretenimiento</span>
-                  <span className="category-amount">$35.000</span>
-                </div>
-                <div className="category-bar">
-                  <div className="category-fill" style={{ width: '25%' }}></div>
-                </div>
-              </div>
-              <div className="category-item">
-                <div className="category-info">
-                  <span className="category-name">Servicios</span>
-                  <span className="category-amount">$28.000</span>
-                </div>
-                <div className="category-bar">
-                  <div className="category-fill" style={{ width: '20%' }}></div>
-                </div>
-              </div>
+            <div className="card">
+              <p className="stat-label mb-2">Promedio Gastos</p>
+              <p className="text-2xl font-bold text-red-400">
+                ${(
+                  monthlyTrend.reduce((acc, m) => acc + (m.expense || 0), 0) / monthlyTrend.length
+                ).toLocaleString('es-CL')}
+              </p>
             </div>
-          </Card>
-        </div>
+            <div className="card">
+              <p className="stat-label mb-2">Total Período</p>
+              <p className="text-2xl font-bold text-blue-400">
+                ${(
+                  monthlyTrend.reduce((acc, m) => acc + ((m.income || 0) - (m.expense || 0)), 0)
+                ).toLocaleString('es-CL')}
+              </p>
+            </div>
+            <div className="card">
+              <p className="stat-label mb-2">Tasa Ahorro</p>
+              <p className="text-2xl font-bold text-yellow-400">
+                {(
+                  (monthlyTrend.reduce((acc, m) => acc + ((m.income || 0) - (m.expense || 0)), 0) / 
+                  monthlyTrend.reduce((acc, m) => acc + (m.income || 0), 0)) * 100
+                ).toFixed(1)}%
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </MainLayout>
   );

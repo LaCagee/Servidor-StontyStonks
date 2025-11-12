@@ -199,7 +199,7 @@ export default function Login() {
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
             <label htmlFor="email">Email</label>
-            <div className="input-with-icon">
+            <div className="input-wrapper">
               <Mail className="input-icon" size={20} />
               <input
                 type="email"
@@ -218,7 +218,7 @@ export default function Login() {
 
           <div className="form-group">
             <label htmlFor="password">Contraseña</label>
-            <div className="input-with-icon">
+            <div className="input-wrapper">
               <Lock className="input-icon" size={20} />
               <input
                 type="password"
