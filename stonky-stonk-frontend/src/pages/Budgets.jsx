@@ -67,6 +67,7 @@ export default function Budgets() {
         axiosConfig
       );
       
+      console.log('Presupuestos cargados:', response.data); // Para debugging
       setBudgets(response.data.budgets || []);
     } catch (err) {
       console.error('Error al cargar presupuestos:', err);
@@ -147,16 +148,19 @@ export default function Budgets() {
   };
 
   const getBudgetStatus = (budget) => {
-    const spentAmount = budget.spentAmount || 0;
+    // CORRECCIÓN: Usar spent.currentSpent en lugar de spentAmount
+    const spentAmount = budget.spent?.currentSpent || 0;
     const monthlyLimit = budget.monthlyLimit || 1;
     const percentage = (spentAmount / monthlyLimit) * 100;
+    
     if (percentage >= 100) return 'over-budget';
     if (percentage >= (budget.alertThreshold || 80)) return 'warning';
     return 'good';
   };
 
-  const totalAllocated = budgets.reduce((sum, b) => sum + (b.monthlyLimit || 0), 0);
-  const totalSpent = budgets.reduce((sum, b) => sum + (b.spentAmount || 0), 0);
+  // CORRECCIÓN: Calcular totales usando spent.currentSpent
+  const totalAllocated = budgets.reduce((sum, b) => sum + (parseFloat(b.monthlyLimit) || 0), 0);
+  const totalSpent = budgets.reduce((sum, b) => sum + (parseFloat(b.spent?.currentSpent) || 0), 0);
   const totalRemaining = totalAllocated - totalSpent;
 
   return (
@@ -237,7 +241,8 @@ export default function Budgets() {
           ) : (
             <div className="budgets-list">
               {budgets.map(budget => {
-                const spentAmount = budget.spentAmount || 0;
+                // CORRECCIÓN: Usar spent.currentSpent en lugar de spentAmount
+                const spentAmount = budget.spent?.currentSpent || 0;
                 const monthlyLimit = budget.monthlyLimit || 1;
                 const status = getBudgetStatus(budget);
                 const percentage = (spentAmount / monthlyLimit) * 100;
