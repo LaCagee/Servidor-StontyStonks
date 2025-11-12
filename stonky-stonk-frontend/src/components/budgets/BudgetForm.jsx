@@ -1,60 +1,69 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import Modal from '../ui/Modal';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+
 export default function BudgetForm({ onSave, onCancel, budget = null }) {
+  const [categories, setCategories] = useState([]);
   const [formData, setFormData] = useState({
-    category: budget?.category || '',
-    allocatedAmount: budget?.allocatedAmount || '',
-    period: budget?.period || 'month',
-    startDate: budget?.startDate || new Date().toISOString().split('T')[0],
-    endDate: budget?.endDate || ''
+    categoryId: budget?.categoryId || '',
+    monthlyLimit: budget?.monthlyLimit || '',
+    alertThreshold: budget?.alertThreshold || 80,
+    description: budget?.description || ''
   });
 
   const [loading, setLoading] = useState(false);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [errors, setErrors] = useState({});
 
-  const categories = [
-    'Alimentación',
-    'Transporte',
-    'Vivienda',
-    'Servicios',
-    'Entretenimiento',
-    'Salud',
-    'Educación',
-    'Ropa',
-    'Otros'
-  ];
+  const token = localStorage.getItem('token');
+  const axiosConfig = {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  };
 
-  const periods = [
-    { value: 'week', label: 'Semanal' },
-    { value: 'month', label: 'Mensual' },
-    { value: 'quarter', label: 'Trimestral' },
-    { value: 'year', label: 'Anual' }
-  ];
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  const loadCategories = async () => {
+    try {
+      setCategoriesLoading(true);
+      const response = await axios.get(
+        `${API_BASE_URL}/categories`,
+        axiosConfig
+      );
+      setCategories(response.data.categories || []);
+    } catch (error) {
+      console.error('Error al cargar categorías:', error);
+      setCategories([]);
+    } finally {
+      setCategoriesLoading(false);
+    }
+  };
 
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.category) {
-      newErrors.category = 'La categoría es requerida';
+    if (!formData.categoryId) {
+      newErrors.categoryId = 'La categoría es requerida';
     }
 
-    if (!formData.allocatedAmount || formData.allocatedAmount <= 0) {
-      newErrors.allocatedAmount = 'El monto debe ser mayor a 0';
+    if (!formData.monthlyLimit || formData.monthlyLimit <= 0) {
+      newErrors.monthlyLimit = 'El monto debe ser mayor a 0';
     }
 
-    if (!formData.startDate) {
-      newErrors.startDate = 'La fecha de inicio es requerida';
+    if (formData.alertThreshold < 1 || formData.alertThreshold > 100) {
+      newErrors.alertThreshold = 'El umbral debe estar entre 1 y 100';
     }
 
-    if (!formData.endDate) {
-      newErrors.endDate = 'La fecha de fin es requerida';
-    }
-
-    if (formData.startDate && formData.endDate && formData.startDate > formData.endDate) {
-      newErrors.endDate = 'La fecha de fin debe ser posterior a la de inicio';
+    if (formData.description && formData.description.length > 300) {
+      newErrors.description = 'La descripción no puede exceder 300 caracteres';
     }
 
     setErrors(newErrors);
@@ -72,13 +81,14 @@ export default function BudgetForm({ onSave, onCancel, budget = null }) {
 
     try {
       await onSave({
-        ...formData,
-        allocatedAmount: Number(formData.allocatedAmount),
-        spentAmount: budget?.spentAmount || 0
+        categoryId: Number(formData.categoryId),
+        monthlyLimit: Number(formData.monthlyLimit),
+        alertThreshold: Number(formData.alertThreshold),
+        description: formData.description
       });
     } catch (error) {
       console.error('Error al guardar el presupuesto:', error);
-      setErrors({ general: 'Error al guardar el presupuesto' });
+      setErrors({ general: error || 'Error al guardar el presupuesto' });
     } finally {
       setLoading(false);
     }
@@ -89,39 +99,6 @@ export default function BudgetForm({ onSave, onCancel, budget = null }) {
     setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
-    }
-  };
-
-  // Calcular fecha de fin automáticamente según el período
-  const handlePeriodChange = (e) => {
-    const period = e.target.value;
-    setFormData(prev => ({ ...prev, period }));
-
-    if (formData.startDate) {
-      const start = new Date(formData.startDate);
-      const endDate = new Date(start);
-
-      switch (period) {
-        case 'week':
-          endDate.setDate(start.getDate() + 7);
-          break;
-        case 'month':
-          endDate.setMonth(start.getMonth() + 1);
-          break;
-        case 'quarter':
-          endDate.setMonth(start.getMonth() + 3);
-          break;
-        case 'year':
-          endDate.setFullYear(start.getFullYear() + 1);
-          break;
-        default:
-          break;
-      }
-
-      setFormData(prev => ({
-        ...prev,
-        endDate: endDate.toISOString().split('T')[0]
-      }));
     }
   };
 
@@ -138,71 +115,69 @@ export default function BudgetForm({ onSave, onCancel, budget = null }) {
         )}
 
         <div className="form-group">
-          <label htmlFor="category">Categoría</label>
+          <label htmlFor="categoryId">Categoría</label>
           <select
-            id="category"
-            name="category"
-            value={formData.category}
+            id="categoryId"
+            name="categoryId"
+            value={formData.categoryId}
             onChange={handleChange}
-            className={errors.category ? 'error' : ''}
-            disabled={loading}
+            className={errors.categoryId ? 'error' : ''}
+            disabled={loading || categoriesLoading}
           >
-            <option value="">Selecciona una categoría</option>
+            <option value="">
+              {categoriesLoading ? 'Cargando categorías...' : 'Selecciona una categoría'}
+            </option>
             {categories.map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
             ))}
           </select>
-          {errors.category && <span className="error-message">{errors.category}</span>}
+          {errors.categoryId && <span className="error-message">{errors.categoryId}</span>}
         </div>
 
         <Input
-          label="Monto Presupuestado"
+          label="Monto Mensual"
           type="number"
-          name="allocatedAmount"
-          value={formData.allocatedAmount}
+          name="monthlyLimit"
+          value={formData.monthlyLimit}
           onChange={handleChange}
-          placeholder="0"
-          error={errors.allocatedAmount}
+          placeholder="Ej: 150000"
+          error={errors.monthlyLimit}
           disabled={loading}
           min="1"
-          step="1000"
+        />
+
+        <Input
+          label="Umbral de Alerta (%)"
+          type="number"
+          name="alertThreshold"
+          value={formData.alertThreshold}
+          onChange={handleChange}
+          placeholder="80"
+          error={errors.alertThreshold}
+          disabled={loading}
+          min="1"
+          max="100"
+          step="1"
         />
 
         <div className="form-group">
-          <label htmlFor="period">Período</label>
-          <select
-            id="period"
-            name="period"
-            value={formData.period}
-            onChange={handlePeriodChange}
-            disabled={loading}
-          >
-            {periods.map(p => (
-              <option key={p.value} value={p.value}>{p.label}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="form-row">
-          <Input
-            label="Fecha de Inicio"
-            type="date"
-            name="startDate"
-            value={formData.startDate}
+          <label htmlFor="description">Descripción (Opcional)</label>
+          <textarea
+            id="description"
+            name="description"
+            value={formData.description}
             onChange={handleChange}
-            error={errors.startDate}
+            placeholder="Agregar descripción..."
             disabled={loading}
+            rows="3"
+            maxLength="300"
           />
-
-          <Input
-            label="Fecha de Fin"
-            type="date"
-            name="endDate"
-            value={formData.endDate}
-            onChange={handleChange}
-            error={errors.endDate}
-            disabled={loading}
-          />
+          <span className="char-count">
+            {formData.description.length}/300
+          </span>
+          {errors.description && <span className="error-message">{errors.description}</span>}
         </div>
 
         <div className="form-actions">

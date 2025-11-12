@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { DollarSign, Mail, Lock, AlertCircle, CheckCircle } from 'lucide-react';
+import { DollarSign, Mail, Lock, User, AlertCircle, CheckCircle } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export default function Register() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
+    name: '',
     email: '',
     password: '',
     confirmPassword: ''
@@ -18,6 +19,12 @@ export default function Register() {
   const validateForm = () => {
     const newErrors = {};
 
+    if (!formData.name || formData.name.trim() === '') {
+      newErrors.name = 'El nombre es requerido';
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = 'El nombre debe tener al menos 2 caracteres';
+    }
+
     if (!formData.email) {
       newErrors.email = 'El email es requerido';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
@@ -26,8 +33,10 @@ export default function Register() {
 
     if (!formData.password) {
       newErrors.password = 'La contraseña es requerida';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'La contraseña debe tener al menos 6 caracteres';
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'La contraseña debe tener al menos 8 caracteres';
+    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
+      newErrors.password = 'La contraseña debe contener mayúscula, minúscula y número';
     }
 
     if (formData.password !== formData.confirmPassword) {
@@ -66,7 +75,8 @@ export default function Register() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: formData.email,
+          name: formData.name.trim(),
+          email: formData.email.trim(),
           password: formData.password,
           confirmPassword: formData.confirmPassword
         }),
@@ -140,16 +150,34 @@ export default function Register() {
 
         {errors.general && (
           <div className="alert alert-error">
-            <AlertCircle size={20} />
+            <AlertCircle size={24} />
             <p>{errors.general}</p>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
+            <label htmlFor="name">Nombre Completo</label>
+            <div className="input-wrapper">
+              <User className="input-icon" size={24} />
+              <input
+                type="text"
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="Juan Pérez"
+                disabled={loading}
+                className={errors.name ? 'error' : ''}
+              />
+            </div>
+            {errors.name && <span className="error-message">{errors.name}</span>}
+          </div>
+
+          <div className="form-group">
             <label htmlFor="email">Email</label>
-            <div className="input-with-icon">
-              <Mail className="input-icon" size={20} />
+            <div className="input-wrapper">
+              <Mail className="input-icon" size={24} />
               <input
                 type="email"
                 id="email"
@@ -166,8 +194,8 @@ export default function Register() {
 
           <div className="form-group">
             <label htmlFor="password">Contraseña</label>
-            <div className="input-with-icon">
-              <Lock className="input-icon" size={20} />
+            <div className="input-wrapper">
+              <Lock className="input-icon" size={24} />
               <input
                 type="password"
                 id="password"
@@ -180,12 +208,15 @@ export default function Register() {
               />
             </div>
             {errors.password && <span className="error-message">{errors.password}</span>}
+            <small className="password-hint">
+              Mínimo 8 caracteres, una mayúscula, una minúscula y un número
+            </small>
           </div>
 
           <div className="form-group">
             <label htmlFor="confirmPassword">Confirmar Contraseña</label>
-            <div className="input-with-icon">
-              <Lock className="input-icon" size={20} />
+            <div className="input-wrapper">
+              <Lock className="input-icon" size={24} />
               <input
                 type="password"
                 id="confirmPassword"

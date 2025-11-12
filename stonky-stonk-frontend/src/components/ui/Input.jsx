@@ -11,6 +11,7 @@ export default function Input({
   min,
   max,
   step,
+  icon: Icon,
   ...props 
 }) {
   return (
@@ -21,6 +22,7 @@ export default function Input({
         </label>
       )}
       <div className="input-wrapper">
+        {Icon && <Icon className="input-icon" size={24} />}
         <input
           type={type}
           id={name}

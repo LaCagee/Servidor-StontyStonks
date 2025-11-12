@@ -1,78 +1,120 @@
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 import MainLayout from '../components/layout/MainLayout';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import BudgetForm from '../components/budgets/BudgetForm';
-import { Plus, PieChart, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Plus, PieChart, AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+
+// Función para formatear números a CLP
+const formatCLP = (value) => {
+  if (!value || isNaN(value)) return '$0';
+  return new Intl.NumberFormat('es-CL', {
+    style: 'currency',
+    currency: 'CLP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(value);
+};
 
 export default function Budgets() {
   const [budgets, setBudgets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingBudget, setEditingBudget] = useState(null);
+  const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const token = localStorage.getItem('token');
+  const axiosConfig = {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  };
 
   useEffect(() => {
     loadBudgets();
+    
+    // Recargar presupuestos cada 10 segundos para verificar cambios de transacciones
+    const interval = setInterval(() => {
+      loadBudgets();
+    }, 10000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  // Escuchar cambios de visibilidad (cuando vuelves a la pestaña)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadBudgets();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
 
   const loadBudgets = async () => {
     setLoading(true);
+    setError(null);
     try {
-      // TODO: Reemplazar con llamada al backend
-      await new Promise(resolve => setTimeout(resolve, 800));
+      const response = await axios.get(
+        `${API_BASE_URL}/budgets`,
+        axiosConfig
+      );
       
-      const mockBudgets = [
-        {
-          id: 1,
-          category: 'Alimentación',
-          allocatedAmount: 100000,
-          spentAmount: 75000,
-          period: 'month',
-          startDate: '2024-01-01',
-          endDate: '2024-01-31',
-          createdAt: '2024-01-01T00:00:00Z'
-        },
-        {
-          id: 2,
-          category: 'Transporte',
-          allocatedAmount: 50000,
-          spentAmount: 45000,
-          period: 'month',
-          startDate: '2024-01-01',
-          endDate: '2024-01-31',
-          createdAt: '2024-01-01T00:00:00Z'
-        }
-      ];
-      
-      setBudgets(mockBudgets);
-    } catch (error) {
-      console.error('Error al cargar presupuestos:', error);
+      setBudgets(response.data.budgets || []);
+    } catch (err) {
+      console.error('Error al cargar presupuestos:', err);
+      setError(err.response?.data?.error || 'Error al cargar los presupuestos');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadBudgets();
+    setRefreshing(false);
+  };
+
   const handleSaveBudget = async (budgetData) => {
     try {
       if (editingBudget) {
-        // Actualizar existente
-        setBudgets(prev => prev.map(b =>
-          b.id === editingBudget.id ? { ...b, ...budgetData } : b
-        ));
+        await axios.put(
+          `${API_BASE_URL}/budgets/${editingBudget.id}`,
+          {
+            monthlyLimit: budgetData.monthlyLimit,
+            alertThreshold: budgetData.alertThreshold || 80,
+            description: budgetData.description
+          },
+          axiosConfig
+        );
       } else {
-        // Crear nuevo
-        const newBudget = {
-          id: Date.now(),
-          ...budgetData,
-          createdAt: new Date().toISOString()
-        };
-        setBudgets(prev => [...prev, newBudget]);
+        await axios.post(
+          `${API_BASE_URL}/budgets`,
+          {
+            categoryId: budgetData.categoryId,
+            monthlyLimit: budgetData.monthlyLimit,
+            alertThreshold: budgetData.alertThreshold || 80,
+            month: new Date().getMonth() + 1,
+            year: new Date().getFullYear(),
+            description: budgetData.description
+          },
+          axiosConfig
+        );
       }
+      
+      await loadBudgets();
       setShowForm(false);
       setEditingBudget(null);
-    } catch (error) {
-      console.error('Error al guardar presupuesto:', error);
-      throw error;
+    } catch (err) {
+      console.error('Error al guardar presupuesto:', err);
+      throw err.response?.data?.error || 'Error al guardar el presupuesto';
     }
   };
 
@@ -87,10 +129,15 @@ export default function Budgets() {
     }
 
     try {
-      // TODO: Llamada al backend
-      setBudgets(prev => prev.filter(b => b.id !== budgetId));
-    } catch (error) {
-      console.error('Error al eliminar presupuesto:', error);
+      await axios.delete(
+        `${API_BASE_URL}/budgets/${budgetId}`,
+        axiosConfig
+      );
+      
+      await loadBudgets();
+    } catch (err) {
+      console.error('Error al eliminar presupuesto:', err);
+      setError(err.response?.data?.error || 'Error al eliminar el presupuesto');
     }
   };
 
@@ -100,32 +147,49 @@ export default function Budgets() {
   };
 
   const getBudgetStatus = (budget) => {
-    const percentage = (budget.spentAmount / budget.allocatedAmount) * 100;
-    if (percentage >= 90) return 'over-budget';
-    if (percentage >= 75) return 'warning';
+    const spentAmount = budget.spentAmount || 0;
+    const monthlyLimit = budget.monthlyLimit || 1;
+    const percentage = (spentAmount / monthlyLimit) * 100;
+    if (percentage >= 100) return 'over-budget';
+    if (percentage >= (budget.alertThreshold || 80)) return 'warning';
     return 'good';
   };
 
-  const totalAllocated = budgets.reduce((sum, b) => sum + b.allocatedAmount, 0);
-  const totalSpent = budgets.reduce((sum, b) => sum + b.spentAmount, 0);
+  const totalAllocated = budgets.reduce((sum, b) => sum + (b.monthlyLimit || 0), 0);
+  const totalSpent = budgets.reduce((sum, b) => sum + (b.spentAmount || 0), 0);
   const totalRemaining = totalAllocated - totalSpent;
 
   return (
     <MainLayout title="Presupuestos" balance={0}>
       <div className="budgets-page">
-        {/* Header */}
         <div className="page-header">
           <div className="header-info">
             <h1 className="page-title">Gestión de Presupuestos</h1>
             <p className="page-subtitle">Controla tus gastos por categoría</p>
           </div>
-          <Button variant="primary" onClick={() => setShowForm(true)}>
-            <Plus className="icon-sm" />
-            Nuevo Presupuesto
-          </Button>
+          <div className="header-actions">
+            <Button 
+              variant="secondary" 
+              onClick={handleRefresh}
+              disabled={refreshing}
+            >
+              <RefreshCw className={`icon-sm ${refreshing ? 'rotating' : ''}`} />
+              {refreshing ? 'Actualizando...' : 'Actualizar'}
+            </Button>
+            <Button variant="primary" onClick={() => setShowForm(true)}>
+              <Plus className="icon-sm" />
+              Nuevo Presupuesto
+            </Button>
+          </div>
         </div>
 
-        {/* Resumen de Presupuestos */}
+        {error && (
+          <div className="error-banner">
+            <p>{error}</p>
+            <button onClick={() => setError(null)}>×</button>
+          </div>
+        )}
+
         <div className="budgets-summary">
           <Card className="summary-card">
             <h3>Resumen Mensual</h3>
@@ -133,18 +197,18 @@ export default function Budgets() {
               <div className="summary-stat">
                 <span className="stat-label">Total Presupuestado</span>
                 <span className="stat-value">
-                  ${totalAllocated.toLocaleString('es-CL')}
+                  {formatCLP(totalAllocated)}
                 </span>
               </div>
               <div className="summary-stat">
                 <span className="stat-label">Total Gastado</span>
                 <span className="stat-value">
-                  ${totalSpent.toLocaleString('es-CL')}
+                  {formatCLP(totalSpent)}
                 </span>
               </div>
               <div className="summary-stat">
                 <span className={`stat-value ${totalRemaining >= 0 ? 'positive' : 'negative'}`}>
-                  ${Math.abs(totalRemaining).toLocaleString('es-CL')}
+                  {formatCLP(Math.abs(totalRemaining))}
                 </span>
                 <span className="stat-label">
                   {totalRemaining >= 0 ? 'Restante' : 'Sobrepasado'}
@@ -154,7 +218,6 @@ export default function Budgets() {
           </Card>
         </div>
 
-        {/* Lista de Presupuestos */}
         <Card title="Tus Presupuestos">
           {loading ? (
             <div className="loading-state">
@@ -174,14 +237,16 @@ export default function Budgets() {
           ) : (
             <div className="budgets-list">
               {budgets.map(budget => {
+                const spentAmount = budget.spentAmount || 0;
+                const monthlyLimit = budget.monthlyLimit || 1;
                 const status = getBudgetStatus(budget);
-                const percentage = (budget.spentAmount / budget.allocatedAmount) * 100;
+                const percentage = (spentAmount / monthlyLimit) * 100;
                 
                 return (
                   <div key={budget.id} className="budget-item">
                     <div className="budget-header">
                       <div className="budget-category">
-                        <span className="category-name">{budget.category}</span>
+                        <span className="category-name">{budget.category?.name || 'Sin categoría'}</span>
                         <span className={`status-indicator ${status}`}>
                           {status === 'over-budget' && <AlertTriangle className="icon-xs" />}
                           {status === 'warning' && <AlertTriangle className="icon-xs" />}
@@ -192,9 +257,9 @@ export default function Budgets() {
                         </span>
                       </div>
                       <div className="budget-amounts">
-                        <span className="spent">${budget.spentAmount.toLocaleString('es-CL')}</span>
+                        <span className="spent">{formatCLP(spentAmount)}</span>
                         <span className="separator">/</span>
-                        <span className="allocated">${budget.allocatedAmount.toLocaleString('es-CL')}</span>
+                        <span className="allocated">{formatCLP(monthlyLimit)}</span>
                       </div>
                     </div>
                     
@@ -207,6 +272,10 @@ export default function Budgets() {
                       </div>
                       <span className="progress-percentage">{percentage.toFixed(0)}%</span>
                     </div>
+
+                    {budget.description && (
+                      <p className="budget-description">{budget.description}</p>
+                    )}
                     
                     <div className="budget-actions">
                       <Button variant="ghost" size="sm" onClick={() => handleEdit(budget)}>
@@ -223,7 +292,6 @@ export default function Budgets() {
           )}
         </Card>
 
-        {/* Modal de Formulario */}
         {showForm && (
           <BudgetForm
             budget={editingBudget}

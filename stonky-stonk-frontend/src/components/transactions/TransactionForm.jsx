@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import Button from '../ui/Button';
-import { X, Lightbulb } from 'lucide-react';
+import { X, Lightbulb, AlertCircle } from 'lucide-react';
 
 const API_BASE_URL = 'http://localhost:3000/api';
 
@@ -24,7 +23,7 @@ export default function TransactionForm({ transaction, categories = [], onSave, 
         type: transaction.type,
         amount: transaction.amount.toString(),
         description: transaction.description,
-        categoryId: transaction.categoryId.toString(),
+        categoryId: transaction.categoryId?.toString() || '',
         date: transaction.date
       });
     }
@@ -43,29 +42,26 @@ export default function TransactionForm({ transaction, categories = [], onSave, 
     setFormData(prev => ({
       ...prev,
       [name]: value,
-      // Resetear categoría si cambia el tipo
       ...(name === 'type' ? { categoryId: '' } : {})
     }));
+    
     // Limpiar error del campo
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
 
-  // Manejar cambio de tipo con switch
-  const handleTypeToggle = () => {
-    const newType = formData.type === 'expense' ? 'income' : 'expense';
+  const handleTypeChange = (type) => {
     setFormData(prev => ({
       ...prev,
-      type: newType,
-      categoryId: '' // Resetear categoría
+      type,
+      categoryId: ''
     }));
   };
 
-  // Obtener sugerencia de categoría
   const handleGetCategorySuggestion = async () => {
     if (!formData.description.trim()) {
-      alert('Por favor, escribe una descripción primero');
+      setErrors(prev => ({ ...prev, description: 'Escribe una descripción primero' }));
       return;
     }
 
@@ -80,8 +76,6 @@ export default function TransactionForm({ transaction, categories = [], onSave, 
       const encodedDescription = encodeURIComponent(formData.description);
       const url = `${API_BASE_URL}/suggestions/best?description=${encodedDescription}&type=${formData.type}`;
 
-      console.log('💡 Solicitando sugerencia de categoría:', url);
-
       const response = await fetch(url, { headers });
 
       if (!response.ok) {
@@ -90,20 +84,24 @@ export default function TransactionForm({ transaction, categories = [], onSave, 
       }
 
       const data = await response.json();
-      console.log('✅ Sugerencia recibida:', data);
 
       if (data.suggestion && data.suggestion.categoryId) {
         setFormData(prev => ({
           ...prev,
           categoryId: data.suggestion.categoryId.toString()
         }));
-        console.log('✅ Categoría sugerida:', data.suggestion.categoryName);
       } else {
-        alert('No se pudo obtener una sugerencia. Por favor, selecciona manualmente.');
+        setErrors(prev => ({ 
+          ...prev, 
+          categoryId: 'No se pudo obtener sugerencia automática' 
+        }));
       }
     } catch (error) {
-      console.error('❌ Error al obtener sugerencia:', error);
-      alert('Error al obtener sugerencia: ' + error.message);
+      console.error('Error al obtener sugerencia:', error);
+      setErrors(prev => ({ 
+        ...prev, 
+        categoryId: 'Error: ' + error.message 
+      }));
     } finally {
       setSuggestingCategory(false);
     }
@@ -121,7 +119,7 @@ export default function TransactionForm({ transaction, categories = [], onSave, 
     }
 
     if (!formData.categoryId) {
-      newErrors.categoryId = 'La categoría es requerida';
+      newErrors.categoryId = 'Debe seleccionar una categoría';
     }
 
     if (!formData.date) {
@@ -139,9 +137,6 @@ export default function TransactionForm({ transaction, categories = [], onSave, 
       return;
     }
 
-    setLoading(true);
-
-    // Preparar datos para enviar según la API
     const transactionData = {
       type: formData.type,
       amount: parseFloat(formData.amount),
@@ -150,99 +145,135 @@ export default function TransactionForm({ transaction, categories = [], onSave, 
       date: formData.date
     };
 
-    onSave(transactionData);
-    setLoading(false);
+    await onSave(transactionData);
   };
 
-  // Filtrar categorías por tipo seleccionado
+  // Filtrar categorías por tipo
   const filteredCategories = categories.filter(cat => cat.type === formData.type);
 
   return (
-    <div className="transaction-form">
-      <div className="form-header">
-        <h2>{transaction ? 'Editar Transacción' : 'Nueva Transacción'}</h2>
-        <button className="close-button" onClick={onCancel} type="button">
-          <X />
+    <div className="transaction-form-container">
+      {/* Header */}
+      <div className="transaction-form-header">
+        <h2 className="text-xl md:text-2xl font-bold text-white">
+          {transaction ? 'Editar Transacción' : 'Nueva Transacción'}
+        </h2>
+        <button
+          onClick={onCancel}
+          className="text-slate-400 hover:text-white transition-colors p-1 hover:bg-slate-700 rounded-lg"
+          aria-label="Cerrar"
+        >
+          <X className="w-6 h-6" />
         </button>
       </div>
 
-      <form onSubmit={handleSubmit}>
-        {/* Tipo de Transacción - SWITCH */}
+      {/* Form */}
+      <form onSubmit={handleSubmit} className="transaction-form-body">
+        
+        {/* Tipo de Transacción */}
         <div className="form-group">
-          <label>Tipo de Transacción</label>
-          <div className="type-switch-container">
+          <label className="form-label">Tipo de Transacción</label>
+          <div className="flex gap-3">
             <button
               type="button"
-              className={`type-switch ${formData.type === 'expense' ? 'active' : ''}`}
-              onClick={handleTypeToggle}
+              onClick={() => handleTypeChange('expense')}
+              className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all ${
+                formData.type === 'expense'
+                  ? 'bg-red-500 text-white border-2 border-red-400'
+                  : 'bg-slate-700 text-slate-300 border-2 border-slate-600 hover:border-slate-500'
+              }`}
             >
-              <span className="switch-label">Gasto</span>
-              
+              💸 Gasto
             </button>
-            <div className="type-switch-toggle">
-              <div className={`toggle-slider ${formData.type === 'income' ? 'income' : 'expense'}`}></div>
-            </div>
             <button
               type="button"
-              className={`type-switch ${formData.type === 'income' ? 'active' : ''}`}
-              onClick={handleTypeToggle}
+              onClick={() => handleTypeChange('income')}
+              className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all ${
+                formData.type === 'income'
+                  ? 'bg-green-500 text-white border-2 border-green-400'
+                  : 'bg-slate-700 text-slate-300 border-2 border-slate-600 hover:border-slate-500'
+              }`}
             >
-              
-              <span className="switch-label">Ingreso</span>
+              💰 Ingreso
             </button>
           </div>
-          <div className="type-indicator">
-            {formData.type === 'expense' ? ' Registrando un Gasto' : ' Registrando un Ingreso'}
-          </div>
+          <p className={`text-xs mt-2 flex items-center gap-1 ${
+            formData.type === 'expense' ? 'text-red-400' : 'text-green-400'
+          }`}>
+            {formData.type === 'expense' ? '↓ Registrando un gasto' : '↑ Registrando un ingreso'}
+          </p>
         </div>
 
         {/* Monto */}
         <div className="form-group">
-          <label htmlFor="amount">Monto</label>
-          <div className="input-with-prefix">
-            <span className="input-prefix">$</span>
+          <label htmlFor="amount" className="form-label">Monto</label>
+          <div className="relative">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-semibold">
+              $
+            </span>
             <input
               type="number"
               id="amount"
               name="amount"
               value={formData.amount}
               onChange={handleChange}
-              placeholder="0"
-              step="1"
+              placeholder="0.00"
+              step="0.01"
               min="0"
-              className={errors.amount ? 'error' : ''}
+              className={`w-full bg-slate-700 border-2 text-white placeholder-slate-500 rounded-lg py-3 pl-8 pr-4 focus:outline-none transition-all ${
+                errors.amount
+                  ? 'border-red-500 focus:border-red-400'
+                  : 'border-slate-600 focus:border-green-400'
+              }`}
             />
           </div>
-          {errors.amount && <span className="error-message">{errors.amount}</span>}
+          {errors.amount && (
+            <p className="text-xs text-red-400 mt-1 flex items-center gap-1">
+              <AlertCircle className="w-3 h-3" />
+              {errors.amount}
+            </p>
+          )}
         </div>
 
         {/* Descripción */}
         <div className="form-group">
-          <label htmlFor="description">Descripción</label>
+          <label htmlFor="description" className="form-label">Descripción</label>
           <input
             type="text"
             id="description"
             name="description"
             value={formData.description}
             onChange={handleChange}
-            placeholder="Ej: Compra en supermercado"
-            className={errors.description ? 'error' : ''}
+            placeholder={formData.type === 'expense' ? 'Ej: Compra en supermercado' : 'Ej: Pago de salario'}
+            className={`w-full bg-slate-700 border-2 text-white placeholder-slate-500 rounded-lg py-3 px-4 focus:outline-none transition-all ${
+              errors.description
+                ? 'border-red-500 focus:border-red-400'
+                : 'border-slate-600 focus:border-green-400'
+            }`}
           />
-          {errors.description && <span className="error-message">{errors.description}</span>}
+          {errors.description && (
+            <p className="text-xs text-red-400 mt-1 flex items-center gap-1">
+              <AlertCircle className="w-3 h-3" />
+              {errors.description}
+            </p>
+          )}
         </div>
 
-        {/* Categoría con Botón de Sugerencia */}
+        {/* Categoría */}
         <div className="form-group">
-          <div className="category-header">
-            <label htmlFor="categoryId">Categoría</label>
+          <div className="flex items-center justify-between mb-2">
+            <label htmlFor="categoryId" className="form-label">Categoría</label>
             <button
               type="button"
-              className="btn-suggestion"
               onClick={handleGetCategorySuggestion}
               disabled={suggestingCategory || !formData.description.trim()}
-              title={formData.description.trim() ? 'Obtener sugerencia automática' : 'Escribe una descripción primero'}
+              className={`text-xs font-semibold py-1 px-2 rounded flex items-center gap-1 transition-all ${
+                suggestingCategory || !formData.description.trim()
+                  ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                  : 'bg-slate-700 text-green-400 hover:bg-slate-600'
+              }`}
             >
-              <Lightbulb size={16} />
+              <Lightbulb className="w-3.5 h-3.5" />
               {suggestingCategory ? 'Sugiriendo...' : 'Sugerir'}
             </button>
           </div>
@@ -251,19 +282,37 @@ export default function TransactionForm({ transaction, categories = [], onSave, 
             name="categoryId"
             value={formData.categoryId}
             onChange={handleChange}
-            className={errors.categoryId ? 'error' : ''}
+            className={`w-full bg-slate-700 border-2 text-white rounded-lg py-3 px-4 focus:outline-none transition-all appearance-none cursor-pointer ${
+              errors.categoryId
+                ? 'border-red-500 focus:border-red-400'
+                : 'border-slate-600 focus:border-green-400'
+            }`}
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e")`,
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'right 0.75rem center',
+              backgroundSize: '16px 16px',
+              paddingRight: '2.5rem'
+            }}
           >
             <option value="">Selecciona una categoría</option>
             {filteredCategories.map(cat => (
-              <option key={cat.id} value={cat.id}>{cat.name}</option>
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
             ))}
           </select>
-          {errors.categoryId && <span className="error-message">{errors.categoryId}</span>}
+          {errors.categoryId && (
+            <p className="text-xs text-red-400 mt-1 flex items-center gap-1">
+              <AlertCircle className="w-3 h-3" />
+              {errors.categoryId}
+            </p>
+          )}
         </div>
 
         {/* Fecha */}
         <div className="form-group">
-          <label htmlFor="date">Fecha</label>
+          <label htmlFor="date" className="form-label">Fecha</label>
           <input
             type="date"
             id="date"
@@ -271,19 +320,42 @@ export default function TransactionForm({ transaction, categories = [], onSave, 
             value={formData.date}
             onChange={handleChange}
             max={new Date().toISOString().split('T')[0]}
-            className={errors.date ? 'error' : ''}
+            className={`w-full bg-slate-700 border-2 text-white rounded-lg py-3 px-4 focus:outline-none transition-all ${
+              errors.date
+                ? 'border-red-500 focus:border-red-400'
+                : 'border-slate-600 focus:border-green-400'
+            }`}
           />
-          {errors.date && <span className="error-message">{errors.date}</span>}
+          {errors.date && (
+            <p className="text-xs text-red-400 mt-1 flex items-center gap-1">
+              <AlertCircle className="w-3 h-3" />
+              {errors.date}
+            </p>
+          )}
         </div>
 
-        {/* Botones */}
-        <div className="form-actions">
-          <Button type="button" variant="secondary" onClick={onCancel}>
+        {/* Botones de Acción */}
+        <div className="flex gap-3 pt-4 border-t border-slate-700">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-semibold py-3 rounded-lg transition-colors"
+          >
             Cancelar
-          </Button>
-          <Button type="submit" variant="primary" loading={loading}>
-            {transaction ? 'Actualizar' : 'Guardar'}
-          </Button>
+          </button>
+          <button
+            type="submit"
+            disabled={loading}
+            className={`flex-1 font-semibold py-3 rounded-lg transition-all ${
+              loading
+                ? 'bg-slate-500 text-slate-300 cursor-not-allowed'
+                : formData.type === 'expense'
+                ? 'bg-red-500 hover:bg-red-600 text-white'
+                : 'bg-green-500 hover:bg-green-600 text-white'
+            }`}
+          >
+            {loading ? 'Guardando...' : (transaction ? 'Actualizar' : 'Guardar')}
+          </button>
         </div>
       </form>
     </div>
