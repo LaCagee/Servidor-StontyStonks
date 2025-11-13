@@ -16,7 +16,13 @@ const sequelize = new Sequelize(
       acquire: 30000,
       idle: 10000
     },
-    timezone: '-03:00' // Ajustar según tu zona horaria
+    timezone: '-03:00', // Ajustar según tu zona horaria
+    dialectOptions: { // Configuración para SSL para conectarse a bases de datos en la nube
+      ssl: {
+        require: true,
+        rejectUnauthorized: false
+      }
+    }
   }
 );
 
