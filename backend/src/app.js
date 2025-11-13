@@ -22,6 +22,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api', routes);
 
 // ========== SERVIR FRONTEND (PRODUCCIÓN) ==========
+/*
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../dist')));
   
@@ -29,8 +30,9 @@ if (process.env.NODE_ENV === 'production') {
     res.sendFile(path.join(__dirname, '../dist', 'index.html'));
   });
 }
+  */
 // ========== RUTA RAÍZ ========== ruta de pruebas para probar el server corriendo
-app.get('/', (req, res) => {
+app.get('/*', (req, res) => {
   res.json({ 
     message: 'API StonkyStonk v1.0',
     status: 'Server running'
