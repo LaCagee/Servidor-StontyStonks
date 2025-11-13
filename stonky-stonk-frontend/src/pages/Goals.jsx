@@ -5,7 +5,7 @@ import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import GoalForm from '../components/goals/GoalForm';
 import GoalProgress from '../components/goals/GoalProgress';
-import { Plus, Target, TrendingUp } from 'lucide-react';
+import { Plus, Target, TrendingUp, Pause } from 'lucide-react';
 
 const API_BASE_URL = 'http://localhost:3000/api';
 
@@ -306,7 +306,7 @@ export default function Goals() {
 
           <Card variant="stonky-info" className="stat-card-large">
             <div className="stat-content">
-              <div className="stat-icon">⏸️</div>
+              <Pause className="stat-icon" />
               <div className="stat-info">
                 <span className="stat-label">Pausadas</span>
                 <span className="stat-value">{pausedGoals.length}</span>

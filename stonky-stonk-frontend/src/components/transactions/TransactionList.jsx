@@ -105,48 +105,51 @@ export default function TransactionList({ transactions, loading, onEdit, onDelet
                   {transaction.type === 'income' ? '+' : '-'}${formatMoney(transaction.amount)}
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex gap-2 opacity-0 md:opacity-100 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={() => onEdit(transaction)}
-                    className="p-2 hover:bg-slate-700 rounded-lg transition-colors text-slate-400 hover:text-blue-400"
-                    title="Editar"
-                    type="button"
-                  >
-                    <Edit2 className="w-4 h-4 md:w-5 md:h-5" />
-                  </button>
-                  <button
-                    onClick={() => onDelete(transaction.id)}
-                    className="p-2 hover:bg-slate-700 rounded-lg transition-colors text-slate-400 hover:text-red-400"
-                    title="Eliminar"
-                    type="button"
-                  >
-                    <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
-                  </button>
+                {/* Action Buttons - RESPONSIVE SIN DUPLICADOS */}
+                <div className="flex gap-2">
+                  {/* Desktop: Solo iconos con hover opacity */}
+                  <div className="hidden md:flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => onEdit(transaction)}
+                      className="p-2 hover:bg-slate-700 rounded-lg transition-colors text-slate-400 hover:text-blue-400"
+                      title="Editar transacción"
+                      type="button"
+                    >
+                      <Edit2 className="w-4 h-4 md:w-5 md:h-5" />
+                    </button>
+                    <button
+                      onClick={() => onDelete(transaction.id)}
+                      className="p-2 hover:bg-slate-700 rounded-lg transition-colors text-slate-400 hover:text-red-400"
+                      title="Eliminar transacción"
+                      type="button"
+                    >
+                      <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
+                    </button>
+                  </div>
+
+                  {/* Mobile: Botones con texto siempre visibles */}
+                  <div className="md:hidden flex gap-2 flex-1">
+                    <button
+                      onClick={() => onEdit(transaction)}
+                      className="flex-1 py-1 px-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold flex items-center justify-center gap-1 transition-colors"
+                      title="Editar transacción"
+                      type="button"
+                    >
+                      <Edit2 className="w-3 h-3" />
+                      Editar
+                    </button>
+                    <button
+                      onClick={() => onDelete(transaction.id)}
+                      className="flex-1 py-1 px-2 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-semibold flex items-center justify-center gap-1 transition-colors"
+                      title="Eliminar transacción"
+                      type="button"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      Eliminar
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-
-            {/* Mobile Action Buttons (visible when no hover) */}
-            <div className="md:hidden flex gap-2 mt-3 pt-3 border-t border-slate-700">
-              <button
-                onClick={() => onEdit(transaction)}
-                className="flex-1 py-2 px-3 bg-slate-700 hover:bg-blue-600 text-white rounded-lg transition-colors text-xs font-semibold flex items-center justify-center gap-1"
-                title="Editar"
-                type="button"
-              >
-                <Edit2 className="w-3 h-3" />
-                Editar
-              </button>
-              <button
-                onClick={() => onDelete(transaction.id)}
-                className="flex-1 py-2 px-3 bg-slate-700 hover:bg-red-600 text-white rounded-lg transition-colors text-xs font-semibold flex items-center justify-center gap-1"
-                title="Eliminar"
-                type="button"
-              >
-                <Trash2 className="w-3 h-3" />
-                Eliminar
-              </button>
             </div>
           </div>
         ))}

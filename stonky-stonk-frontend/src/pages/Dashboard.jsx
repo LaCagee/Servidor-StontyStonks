@@ -2,11 +2,14 @@ import { useState, useEffect } from 'react';
 import MainLayout from '../components/layout/MainLayout';
 import Card from '../components/ui/Card';
 import { DollarSign, ArrowUpCircle, ArrowDownCircle, Target, TrendingUp, CreditCard } from 'lucide-react';
+import axios from 'axios';
 
 export default function Dashboard() {
   const [transactions, setTransactions] = useState([]);
   const [dashboardData, setDashboardData] = useState(null);
   const [monthlyTrend, setMonthlyTrend] = useState([]);
+  const [goals, setGoals] = useState([]);
+  const [previousMonthData, setPreviousMonthData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -40,6 +43,11 @@ export default function Dashboard() {
     }
   };
 
+  const calculateMonthComparison = (current, previous) => {
+    if (!previous || previous === 0) return 0;
+    return (((current - previous) / previous) * 100).toFixed(1);
+  };
+
   const loadRealData = async () => {
     try {
       setLoading(true);
@@ -52,13 +60,30 @@ export default function Dashboard() {
 
       console.log('🚀 Iniciando carga de datos del dashboard...');
 
-      const dashboardResult = await apiFetch('/dashboard/overview');
-      const transactionsResult = await apiFetch('/transactions?page=1&limit=5&sort=date:desc');
-      const monthlyTrendResult = await apiFetch('/dashboard/monthly-trend?months=6');
+      // Cargar todos los datos en paralelo
+      const [dashboardResult, transactionsResult, monthlyTrendResult, goalsResult] = await Promise.all([
+        apiFetch('/dashboard/overview'),
+        apiFetch('/transactions?page=1&limit=5&sort=date:desc'),
+        apiFetch('/dashboard/monthly-trend?months=6'),
+        apiFetch('/goals')
+      ]);
 
       setDashboardData(dashboardResult.overview);
       setTransactions(transactionsResult.transactions || []);
       setMonthlyTrend(monthlyTrendResult.trend || []);
+      
+      // Filtrar y contar metas activas
+      const activeGoals = (goalsResult.goals || []).filter(g => g.status === 'active');
+      setGoals(activeGoals);
+
+      // Calcular progreso promedio de metas activas
+      const avgProgress = activeGoals.length > 0
+        ? (activeGoals.reduce((acc, g) => acc + (g.progress?.percentage || 0), 0) / activeGoals.length).toFixed(0)
+        : 0;
+
+      setPreviousMonthData({
+        avgProgress
+      });
 
     } catch (err) {
       console.error('❌ Error cargando datos:', err);
@@ -86,7 +111,9 @@ export default function Dashboard() {
       return {
         balance: dashboardData.balance?.currentBalance || 0,
         income: dashboardData.currentMonth?.income || 0,
-        expenses: dashboardData.currentMonth?.expense || 0
+        expenses: dashboardData.currentMonth?.expense || 0,
+        previousIncome: dashboardData.balance?.totalIncome || 0,
+        previousExpense: dashboardData.balance?.totalExpense || 0
       };
     } else {
       const balance = transactions.reduce((acc, t) => 
@@ -101,11 +128,16 @@ export default function Dashboard() {
         .filter(t => t.type === 'expense')
         .reduce((acc, t) => acc + t.amount, 0);
 
-      return { balance, income, expenses };
+      return { balance, income, expenses, previousIncome: 0, previousExpense: 0 };
     }
   };
 
-  const { balance, income, expenses } = calculateBalances();
+  const { balance, income, expenses, previousIncome, previousExpense } = calculateBalances();
+
+  // Calcular cambios porcentuales
+  const incomeChange = calculateMonthComparison(income, previousIncome);
+  const expenseChange = calculateMonthComparison(expenses, previousExpense);
+  const balanceChange = calculateMonthComparison(balance, previousIncome - previousExpense);
 
   if (loading) {
     return (
@@ -173,8 +205,8 @@ export default function Dashboard() {
                 <DollarSign className="w-6 h-6" />
               </div>
             </div>
-            <p className="stat-change positive text-sm">
-              <span>↑</span> +12% vs mes anterior
+            <p className={`stat-change text-sm ${parseFloat(balanceChange) >= 0 ? 'positive' : 'negative'}`}>
+              <span>{parseFloat(balanceChange) >= 0 ? '↑' : '↓'}</span> {parseFloat(balanceChange) >= 0 ? '+' : ''}{balanceChange}% vs mes anterior
             </p>
           </div>
 
@@ -191,8 +223,8 @@ export default function Dashboard() {
                 <TrendingUp className="w-6 h-6" />
               </div>
             </div>
-            <p className="stat-change positive text-sm">
-              <span>↑</span> +8% vs mes anterior
+            <p className={`stat-change text-sm ${parseFloat(incomeChange) >= 0 ? 'positive' : 'negative'}`}>
+              <span>{parseFloat(incomeChange) >= 0 ? '↑' : '↓'}</span> {parseFloat(incomeChange) >= 0 ? '+' : ''}{incomeChange}% vs mes anterior
             </p>
           </div>
 
@@ -209,8 +241,8 @@ export default function Dashboard() {
                 <CreditCard className="w-6 h-6" />
               </div>
             </div>
-            <p className="stat-change negative text-sm">
-              <span>↓</span> -5% vs mes anterior
+            <p className={`stat-change text-sm ${parseFloat(expenseChange) <= 0 ? 'positive' : 'negative'}`}>
+              <span>{parseFloat(expenseChange) <= 0 ? '↓' : '↑'}</span> {parseFloat(expenseChange) >= 0 ? '+' : ''}{expenseChange}% vs mes anterior
             </p>
           </div>
 
@@ -219,14 +251,14 @@ export default function Dashboard() {
             <div className="flex items-start justify-between mb-4">
               <div>
                 <p className="stat-label">Metas Activas</p>
-                <p className="text-3xl md:text-2xl font-bold text-white mt-2">3</p>
+                <p className="text-3xl md:text-2xl font-bold text-white mt-2">{goals.length}</p>
               </div>
               <div className="stat-icon goal">
                 <Target className="w-6 h-6" />
               </div>
             </div>
             <p className="stat-change text-blue-300 text-sm">
-              75% completado
+              {previousMonthData?.avgProgress || 0}% completado promedio
             </p>
           </div>
         </div>
