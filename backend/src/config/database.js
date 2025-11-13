@@ -1,6 +1,8 @@
 const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 const sequelize = new Sequelize(
   process.env.DB_NAME,
   process.env.DB_USER,
@@ -9,20 +11,22 @@ const sequelize = new Sequelize(
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
     dialect: 'postgres',
-    logging: process.env.NODE_ENV === 'development' ? console.log : false, // Log SQL queries in development
+    logging: process.env.NODE_ENV === 'development' ? console.log : false,
     pool: {
       max: 5,
       min: 0,
       acquire: 30000,
       idle: 10000
     },
-    timezone: '-03:00', // Ajustar según tu zona horaria
-    dialectOptions: { // Configuración para SSL para conectarse a bases de datos en la nube
-      ssl: {
-        require: true,
-        rejectUnauthorized: false
-      }
-    }
+    timezone: '-03:00',
+    dialectOptions: isProduction
+      ? {
+          ssl: {
+            require: true,
+            rejectUnauthorized: false
+          }
+        }
+      : {}
   }
 );
 
