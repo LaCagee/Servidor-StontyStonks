@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Lightbulb, AlertCircle } from 'lucide-react';
 
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api`;
 
 export default function TransactionForm({ transaction, categories = [], onSave, onCancel }) {
   const [formData, setFormData] = useState({

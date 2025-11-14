@@ -8,7 +8,7 @@ import TransactionList from '../components/transactions/TransactionList';
 import { Plus, Download, Upload, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 
 // Base URL - IMPORTANTE: incluir /api
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api`;
 
 export default function Transactions() {
   const [transactions, setTransactions] = useState([]);

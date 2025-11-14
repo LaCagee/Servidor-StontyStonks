@@ -6,7 +6,7 @@ import Button from '../components/ui/Button';
 import BudgetForm from '../components/budgets/BudgetForm';
 import { Plus, PieChart, AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api`;
 
 // Función para formatear números a CLP
 const formatCLP = (value) => {
