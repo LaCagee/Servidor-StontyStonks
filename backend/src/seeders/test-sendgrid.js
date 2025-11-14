@@ -1,34 +1,33 @@
 // ============================================
-// SCRIPT DE PRUEBA - SENDGRID
+// SCRIPT DE PRUEBA - SENDGRID API
 // ============================================
 require('dotenv').config();
 const transporter = require('../config/email');
 
 async function testSendGrid() {
   try {
-    console.log('🔄 Iniciando prueba de SendGrid...\n');
+    console.log('🔄 Iniciando prueba de SendGrid API...\n');
     console.log('📧 Email FROM:', process.env.EMAIL_FROM);
-    console.log('🔑 API Key:', process.env.EMAIL_PASSWORD ? '✓ Configurada' : '✗ NO configurada');
+    console.log('🔑 API Key:', process.env.SENDGRID_API_KEY ? '✓ Configurada' : '✗ NO configurada');
     console.log('');
 
-    // ⚠️ CAMBIAR POR TU EMAIL REAL
+    
     const testEmail = {
-      from: process.env.EMAIL_FROM,
-      to: 'matiaseduardocaceresrojas09@gmail.com', // ← CAMBIAR AQUÍ
-      subject: '✅ Prueba SendGrid - StonkyStonk',
-      text: 'Este es un email de prueba desde SendGrid.',
+      to: 'matiaseduardocaceresrojas09@gmail.com', // Email de destino para la prueba
+      subject: '✅ Prueba SendGrid API - StonkyStonk',
+      text: 'Este es un email de prueba desde SendGrid API.',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h1 style="color: #4ECDC4;">🎉 ¡SendGrid Funciona!</h1>
-          <p>Este email fue enviado exitosamente desde <strong>SendGrid</strong>.</p>
+          <h1 style="color: #4ECDC4;">🎉 ¡SendGrid API Funciona!</h1>
+          <p>Este email fue enviado exitosamente usando <strong>@sendgrid/mail</strong>.</p>
           
           <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
             <p style="margin: 5px 0;"><strong>Fecha:</strong> ${new Date().toLocaleString('es-CL')}</p>
-            <p style="margin: 5px 0;"><strong>Servicio:</strong> SendGrid SMTP</p>
+            <p style="margin: 5px 0;"><strong>Método:</strong> SendGrid REST API (no SMTP)</p>
             <p style="margin: 5px 0;"><strong>Aplicación:</strong> StonkyStonk Backend</p>
           </div>
 
-          <p>Si recibiste este email, significa que la configuración es correcta ✅</p>
+          <p>Si recibiste este email, significa que la migración fue exitosa ✅</p>
 
           <hr style="border: 1px solid #eee; margin: 30px 0;">
           <p style="color: #666; font-size: 12px;">
@@ -44,36 +43,32 @@ async function testSendGrid() {
     console.log('\n✅ ¡Email enviado exitosamente!\n');
     console.log('📧 Message ID:', info.messageId);
     console.log('📨 Respuesta:', info.response);
-    console.log('\n🎉 SendGrid está funcionando correctamente!');
+    console.log('\n🎉 SendGrid API está funcionando correctamente!');
     console.log('👉 Revisa tu bandeja de entrada (o spam)\n');
 
   } catch (error) {
     console.error('\n❌ Error al enviar email:\n');
     console.error('Mensaje:', error.message);
     
-    if (error.code === 'EAUTH') {
-      console.error('\n⚠️  Error de autenticación. Verifica:');
-      console.error('1. Tu SENDGRID_API_KEY en .env (sin espacios)');
-      console.error('2. Que user sea literal "apikey"');
-      console.error('3. Que el API Key tenga permisos Mail Send');
-      console.error('4. Que el Single Sender esté verificado');
+    if (error.code === 403) {
+      console.error('\n⚠️  Error 403: Verifica que tu Single Sender esté verificado en SendGrid');
     }
-
-    if (error.code === 'EENVELOPE') {
-      console.error('\n⚠️  Error con direcciones de email. Verifica:');
-      console.error('1. EMAIL_FROM coincide con Single Sender verificado');
-      console.error('2. El email TO es válido');
+    
+    if (error.code === 401) {
+      console.error('\n⚠️  Error 401: API Key inválida. Verifica:');
+      console.error('1. SENDGRID_API_KEY en .env (sin espacios)');
+      console.error('2. Que el API Key tenga permisos Mail Send');
     }
 
     console.error('\n📋 Configuración actual:');
     console.error('   FROM:', process.env.EMAIL_FROM);
-    console.error('   API Key configurada:', !!process.env.EMAIL_PASSWORD);
+    console.error('   API Key configurada:', !!process.env.SENDGRID_API_KEY);
   }
 }
 
 // Verificar configuración antes de ejecutar
-if (!process.env.EMAIL_PASSWORD) {
-  console.error('❌ EMAIL_PASSWORD no está configurada en .env');
+if (!process.env.SENDGRID_API_KEY) {
+  console.error('❌ SENDGRID_API_KEY no está configurada en .env');
   process.exit(1);
 }
 
