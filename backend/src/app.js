@@ -1,7 +1,6 @@
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
-const path = require('path');
 const routes = require('./routes');
 const errorHandler = require('./middlewares/errorHandler');
 
@@ -10,68 +9,70 @@ const app = express();
 // ========== SEGURIDAD ==========
 app.use(helmet());
 
-// ========== CONFIGURACIÓN CORS PARA AZURE ==========
+// ========== CONFIGURACIÓN CORS SIMPLIFICADA Y FUNCIONAL ==========
 const allowedOrigins = [
   'https://wonderful-rock-0fdabe810.3.azurestaticapps.net',
-  'http://localhost:5173', // Desarrollo local
-  'http://localhost:3000'  // Desarrollo local
-].filter(Boolean);
+  'http://localhost:5173',
+  'http://localhost:3000'
+];
 
-// Log de configuración (útil para debugging en Azure)
 console.log('🌐 CORS - Orígenes permitidos:', allowedOrigins);
 console.log('🔧 NODE_ENV:', process.env.NODE_ENV);
 
-app.use(cors({
+// CORS configuración completa aplicada globalmente
+const corsOptions = {
   origin: function (origin, callback) {
-    // Permitir requests sin origin (mobile apps, Postman, algunos health checks)
+    // Permitir requests sin origin (Postman, curl, mobile apps)
     if (!origin) {
-      console.log('✅ Request sin origin header - Permitido');
       return callback(null, true);
     }
     
-    // Verificar si el origin está en la lista permitida
+    // Verificar si el origin está permitido
     if (allowedOrigins.includes(origin)) {
-      console.log(`✅ Origin permitido: ${origin}`);
-      return callback(null, true);
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
     }
-    
-    // Rechazar origins no autorizados
-    console.log(`❌ Origin NO permitido: ${origin}`);
-    console.log(`📋 Orígenes válidos:`, allowedOrigins);
-    callback(new Error(`CORS: Origin ${origin} no está permitido`));
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  exposedHeaders: ['Content-Range', 'X-Content-Range'],
-  maxAge: 86400 // Cache de preflight por 24 horas
-}));
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  exposedHeaders: ['Content-Length', 'Content-Type'],
+  maxAge: 86400, // 24 horas
+  preflightContinue: false,
+  optionsSuccessStatus: 204
+};
 
-// Handler explícito para OPTIONS (preflight requests)
-app.options('*', cors());
+// Aplicar CORS a TODAS las rutas
+app.use(cors(corsOptions));
 
 // ========== MIDDLEWARES ==========
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ========== DEBUG MIDDLEWARE (comentar en producción si afecta rendimiento) ==========
-if (process.env.NODE_ENV === 'development') {
-  app.use((req, res, next) => {
-    console.log(`📨 ${req.method} ${req.path}`);
-    console.log(`🌍 Origin: ${req.headers.origin || 'NO ORIGIN'}`);
-    next();
+// ========== LOGGING DE REQUESTS (útil para debugging) ==========
+app.use((req, res, next) => {
+  console.log(`📨 ${new Date().toISOString()} - ${req.method} ${req.path}`);
+  console.log(`🌍 Origin: ${req.headers.origin || 'NO ORIGIN'}`);
+  
+  // Log cuando se completa la respuesta
+  res.on('finish', () => {
+    console.log(`✅ ${req.method} ${req.path} → ${res.statusCode}`);
   });
-}
+  
+  next();
+});
 
 // ========== RUTAS API ==========
 app.use('/api', routes);
 
-// ========== RUTA DE SALUD (para Azure Health Probes) ==========
+// ========== HEALTH CHECK ==========
 app.get('/health', (req, res) => {
   res.status(200).json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'unknown'
+    environment: process.env.NODE_ENV || 'development',
+    cors: 'enabled'
   });
 });
 
@@ -79,8 +80,13 @@ app.get('/health', (req, res) => {
 app.get('/', (req, res) => {
   res.json({ 
     message: 'API StonkyStonk v1.0',
-    status: 'Server running',
-    timestamp: new Date().toISOString()
+    status: 'running',
+    timestamp: new Date().toISOString(),
+    cors: 'enabled',
+    endpoints: {
+      health: '/health',
+      api: '/api'
+    }
   });
 });
 
