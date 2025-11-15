@@ -49,13 +49,14 @@ if (process.env.NODE_ENV === 'production') {
 }
   */
 // ========== RUTA RAÍZ ========== ruta de pruebas para probar el server corriendo
+/*
 app.get((req, res) => {
   res.json({ 
     message: 'API StonkyStonk v1.0',
     status: 'Server running'
   });
 });
-
+*/
 // ========== RUTA DE SALUD ==========
 app.get('/health', (req, res) => {
   res.json({ 
