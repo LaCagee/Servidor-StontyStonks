@@ -3,6 +3,7 @@ import MainLayout from '../components/layout/MainLayout';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { Download, Filter, Calendar, BarChart3, TrendingUp, PieChart, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+import { formatCLP } from '../utils/currency';
 
 export default function Reports() {
   const [reportData, setReportData] = useState(null);
@@ -60,9 +61,6 @@ export default function Reports() {
     console.log(`Exportando reporte en formato: ${format}`);
   };
 
-  const formatCurrency = (value) => {
-    return `$${value.toLocaleString('es-CL')}`;
-  };
 
   if (loading) {
     return (
@@ -125,7 +123,7 @@ export default function Reports() {
                     <span>{reportData.summary.incomeGrowth}%</span>
                   </div>
                 </div>
-                <span className="value income">{formatCurrency(reportData.summary.totalIncome)}</span>
+                <span className="value income">{formatCLP(reportData.summary.totalIncome)}</span>
                 <span className="sublabel">vs periodo anterior</span>
               </div>
               
@@ -137,7 +135,7 @@ export default function Reports() {
                     <span>{Math.abs(reportData.summary.expenseGrowth)}%</span>
                   </div>
                 </div>
-                <span className="value expense">{formatCurrency(reportData.summary.totalExpenses)}</span>
+                <span className="value expense">{formatCLP(reportData.summary.totalExpenses)}</span>
                 <span className="sublabel">vs periodo anterior</span>
               </div>
               
@@ -146,7 +144,7 @@ export default function Reports() {
                   <span className="label">Ahorro Neto</span>
                   <TrendingUp className="header-icon" />
                 </div>
-                <span className="value savings">{formatCurrency(reportData.summary.netSavings)}</span>
+                <span className="value savings">{formatCLP(reportData.summary.netSavings)}</span>
                 <span className="sublabel">disponible para invertir</span>
               </div>
               
@@ -182,7 +180,7 @@ export default function Reports() {
                         <span>{Math.abs(item.trend)}%</span>
                       </div>
                     </div>
-                    <span className="category-amount">{formatCurrency(item.amount)}</span>
+                    <span className="category-amount">{formatCLP(item.amount)}</span>
                   </div>
                   <div className="category-progress">
                     <div className="progress-bar">
@@ -201,7 +199,7 @@ export default function Reports() {
               ))}
             </div>
             <div className="chart-footer">
-              <span className="footer-text">Gasto total: {formatCurrency(reportData.summary.totalExpenses)}</span>
+              <span className="footer-text">Gasto total: {formatCLP(reportData.summary.totalExpenses)}</span>
             </div>
           </Card>
 
@@ -215,12 +213,12 @@ export default function Reports() {
                     <div 
                       className="trend-bar income"
                       style={{ height: `${(month.income / 500000) * 100}%` }}
-                      title={`Ingresos: ${formatCurrency(month.income)}`}
+                      title={`Ingresos: ${formatCLP(month.income)}`}
                     ></div>
                     <div 
                       className="trend-bar expense"
                       style={{ height: `${(month.expenses / 500000) * 100}%` }}
-                      title={`Gastos: ${formatCurrency(month.expenses)}`}
+                      title={`Gastos: ${formatCLP(month.expenses)}`}
                     ></div>
                   </div>
                   <div className="month-details">
@@ -277,7 +275,7 @@ export default function Reports() {
               </div>
               <div className="info-text">
                 <span className="info-label">Ahorro Acumulado</span>
-                <span className="info-value">{formatCurrency(reportData.summary.netSavings)}</span>
+                <span className="info-value">{formatCLP(reportData.summary.netSavings)}</span>
                 <span className="info-sublabel">En este periodo</span>
               </div>
             </div>

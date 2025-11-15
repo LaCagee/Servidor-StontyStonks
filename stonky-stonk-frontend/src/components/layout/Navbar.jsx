@@ -1,9 +1,11 @@
 // src/components/layout/Navbar.jsx
+import { formatCLP } from '../../utils/currency';
+
 export default function Navbar({ title, balance, onMenuClick }) {
   return (
     <header className="navbar">
       <div className="flex items-center gap-4 flex-1">
-        <button 
+        <button
           className="navbar-menu-btn"
           onClick={onMenuClick}
           aria-label="Abrir menú"
@@ -14,10 +16,10 @@ export default function Navbar({ title, balance, onMenuClick }) {
         </button>
         <h1 className="navbar-title">{title}</h1>
       </div>
-      
+
       <div className="flex items-center gap-4">
         <span className="navbar-balance">
-          ${balance?.toLocaleString('es-CL') || '0'}
+          {formatCLP(balance || 0)}
         </span>
       </div>
     </header>

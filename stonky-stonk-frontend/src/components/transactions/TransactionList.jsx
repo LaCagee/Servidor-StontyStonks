@@ -1,4 +1,5 @@
 import { Edit2, Trash2, ArrowUpCircle, ArrowDownCircle, AlertCircle } from 'lucide-react';
+import { formatCLP } from '../../utils/currency';
 
 export default function TransactionList({ transactions, loading, onEdit, onDelete }) {
   if (loading) {
@@ -31,10 +32,6 @@ export default function TransactionList({ transactions, loading, onEdit, onDelet
       month: 'short',
       year: 'numeric'
     });
-  };
-
-  const formatMoney = (amount) => {
-    return parseInt(amount || 0).toLocaleString('es-CL');
   };
 
   const getCategoryName = (category) => {
@@ -102,7 +99,7 @@ export default function TransactionList({ transactions, loading, onEdit, onDelet
                 <div className={`text-right font-bold text-sm md:text-base whitespace-nowrap ${
                   transaction.type === 'income' ? 'text-green-400' : 'text-red-400'
                 }`}>
-                  {transaction.type === 'income' ? '+' : '-'}${formatMoney(transaction.amount)}
+                  {transaction.type === 'income' ? '+' : '-'}{formatCLP(transaction.amount)}
                 </div>
 
                 {/* Action Buttons - RESPONSIVE SIN DUPLICADOS */}
