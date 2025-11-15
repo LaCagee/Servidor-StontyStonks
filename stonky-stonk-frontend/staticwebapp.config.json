@@ -1,6 +1,6 @@
 {
   "platform": {
-    "nodeVersion": "20.18.3"
+    "nodeVersion": "20.19.5"
   },
   "navigationFallback": {
     "rewrite": "/index.html",
