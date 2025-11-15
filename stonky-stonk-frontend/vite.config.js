@@ -18,6 +18,6 @@ export default defineConfig({
     }
   ],
   build: {
-    outDir: "dist"   // <-- ESTA LÍNEA ES IMPORTANTE
+    outDir: "dist"   
   }
 })
