@@ -9,8 +9,26 @@ const app = express();
 
 // ========== SEGURIDAD ==========
 app.use(helmet());
+
+// Configuración CORS con múltiples orígenes permitidos
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://localhost:5173',
+  'https://wonderful-rock-8fdab810.3.azurestaticapps.net',
+  process.env.FRONTEND_URL
+].filter(Boolean); // Eliminar valores undefined
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: function (origin, callback) {
+    // Permitir requests sin origin (como mobile apps o curl)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 
