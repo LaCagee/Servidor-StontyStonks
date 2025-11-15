@@ -12,9 +12,8 @@ app.use(helmet());
 
 // Configuración CORS con múltiples orígenes permitidos
 const allowedOrigins = [
-  'http://localhost:5173',
-  'https://localhost:5173',
-  'https://wonderful-rock-8fdab810.3.azurestaticapps.net',
+  //'http://localhost:3000',  //habilitar para desarrollo local
+  'https://wonderful-rock-0fdabe810.3.azurestaticapps.net',
   process.env.FRONTEND_URL
 ].filter(Boolean); // Eliminar valores undefined
 
