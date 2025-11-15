@@ -10,59 +10,86 @@ const app = express();
 // ========== SEGURIDAD ==========
 app.use(helmet());
 
-// Configuración CORS con múltiples orígenes permitidos
+// ========== CONFIGURACIÓN CORS PARA AZURE ==========
 const allowedOrigins = [
-  //'http://localhost:3000',  //habilitar para desarrollo local
   'https://wonderful-rock-0fdabe810.3.azurestaticapps.net',
-  process.env.FRONTEND_URL
-].filter(Boolean); // Eliminar valores undefined
+  'http://localhost:5173', // Desarrollo local
+  'http://localhost:3000'  // Desarrollo local
+].filter(Boolean);
+
+// Log de configuración (útil para debugging en Azure)
+console.log('🌐 CORS - Orígenes permitidos:', allowedOrigins);
+console.log('🔧 NODE_ENV:', process.env.NODE_ENV);
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Permitir requests sin origin (como mobile apps o curl)
-    if (!origin) return callback(null, true);
-
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
+    // Permitir requests sin origin (mobile apps, Postman, algunos health checks)
+    if (!origin) {
+      console.log('✅ Request sin origin header - Permitido');
+      return callback(null, true);
     }
+    
+    // Verificar si el origin está en la lista permitida
+    if (allowedOrigins.includes(origin)) {
+      console.log(`✅ Origin permitido: ${origin}`);
+      return callback(null, true);
+    }
+    
+    // Rechazar origins no autorizados
+    console.log(`❌ Origin NO permitido: ${origin}`);
+    console.log(`📋 Orígenes válidos:`, allowedOrigins);
+    callback(new Error(`CORS: Origin ${origin} no está permitido`));
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  maxAge: 86400 // Cache de preflight por 24 horas
 }));
+
+// Handler explícito para OPTIONS (preflight requests)
+app.options('*', cors());
 
 // ========== MIDDLEWARES ==========
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// ========== DEBUG MIDDLEWARE (comentar en producción si afecta rendimiento) ==========
+if (process.env.NODE_ENV === 'development') {
+  app.use((req, res, next) => {
+    console.log(`📨 ${req.method} ${req.path}`);
+    console.log(`🌍 Origin: ${req.headers.origin || 'NO ORIGIN'}`);
+    next();
+  });
+}
+
 // ========== RUTAS API ==========
 app.use('/api', routes);
 
-// ========== SERVIR FRONTEND (PRODUCCIÓN) ==========
-/*
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../dist')));
-  
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../dist', 'index.html'));
-  });
-}
-  */
-// ========== RUTA RAÍZ ========== ruta de pruebas para probar el server corriendo
-/*
-app.get((req, res) => {
-  res.json({ 
-    message: 'API StonkyStonk v1.0',
-    status: 'Server running'
-  });
-});
-*/
-// ========== RUTA DE SALUD ==========
+// ========== RUTA DE SALUD (para Azure Health Probes) ==========
 app.get('/health', (req, res) => {
-  res.json({ 
+  res.status(200).json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV 
+    environment: process.env.NODE_ENV || 'unknown'
+  });
+});
+
+// ========== RUTA RAÍZ ==========
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'API StonkyStonk v1.0',
+    status: 'Server running',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// ========== MANEJO DE RUTAS NO ENCONTRADAS ==========
+app.use((req, res) => {
+  res.status(404).json({
+    error: 'Ruta no encontrada',
+    path: req.path,
+    method: req.method
   });
 });
 
