@@ -1,4 +1,7 @@
 {
+  "platform": {
+    "nodeVersion": "20.18.3"
+  },
   "navigationFallback": {
     "rewrite": "/index.html",
     "exclude": ["/images/*.{png,jpg,gif,ico,svg}", "/*.{css,scss,js}"]
