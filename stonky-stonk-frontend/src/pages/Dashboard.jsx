@@ -14,7 +14,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api`;
+  const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'https://stonky-backend.blackdune-587dd75b.westus3.azurecontainerapps.io'}/api`;
 
   const getAuthHeaders = () => {
     const token = localStorage.getItem('token');
@@ -92,7 +92,7 @@ export default function Dashboard() {
       let errorMessage = 'Error al cargar los datos del dashboard';
       
       if (err.message.includes('Failed to fetch')) {
-        errorMessage = `No se puede conectar con el servidor backend. Por favor verifica que esté ejecutándose en ${import.meta.env.VITE_API_URL || 'http://localhost:3000'}`;
+        errorMessage = `No se puede conectar con el servidor backend. Por favor verifica que esté ejecutándose en ${import.meta.env.VITE_API_URL || 'https://stonky-backend.blackdune-587dd75b.westus3.azurecontainerapps.io'}`;
       } else if (err.message.includes('HTTP error')) {
         errorMessage = `Error del servidor: ${err.message}`;
       }

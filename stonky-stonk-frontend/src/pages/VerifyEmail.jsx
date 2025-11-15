@@ -3,7 +3,7 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { DollarSign, CheckCircle, XCircle, Loader } from 'lucide-react';
 import Button from '../components/ui/Button';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_API_URL || 'https://stonky-backend.blackdune-587dd75b.westus3.azurecontainerapps.io';
 
 export default function VerifyEmail() {
   const [searchParams] = useSearchParams();

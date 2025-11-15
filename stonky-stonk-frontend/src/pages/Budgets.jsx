@@ -7,7 +7,7 @@ import BudgetForm from '../components/budgets/BudgetForm';
 import { Plus, PieChart, AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react';
 import { formatCLP, formatPercentage } from '../utils/currency';
 
-const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api`;
+const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'https://stonky-backend.blackdune-587dd75b.westus3.azurecontainerapps.io'}/api`;
 
 export default function Budgets() {
   const [budgets, setBudgets] = useState([]);
