@@ -3,6 +3,7 @@ import MainLayout from '../components/layout/MainLayout';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { TrendingUp, AlertTriangle, Lightbulb, Target, ChevronRight, CheckCircle, Clock, Zap } from 'lucide-react';
+import { formatCLP } from '../utils/currency';
 
 export default function Analysis() {
   const [insights, setInsights] = useState([]);
@@ -94,9 +95,6 @@ export default function Analysis() {
     }
   };
 
-  const formatCurrency = (value) => {
-    return `$${value.toLocaleString('es-CL')}`;
-  };
 
   const totalActionable = insights.filter(i => i.actionable).length;
   const potentialSavings = insights.reduce((sum, i) => sum + i.amount, 0);
@@ -135,7 +133,7 @@ export default function Analysis() {
               </div>
               <div className="metric-info">
                 <span className="metric-label">Ahorro Potencial</span>
-                <span className="metric-value">{formatCurrency(potentialSavings)}</span>
+                <span className="metric-value">{formatCLP(potentialSavings)}</span>
                 <span className="metric-description">Oportunidades identificadas</span>
               </div>
               <div className="metric-badge">Este mes</div>
@@ -206,7 +204,7 @@ export default function Analysis() {
                       {insight.amount > 0 && (
                         <div className="insight-amount">
                           <span className="amount-label">Impacto</span>
-                          <span className="amount-value">{formatCurrency(insight.amount)}</span>
+                          <span className="amount-value">{formatCLP(insight.amount)}</span>
                         </div>
                       )}
 

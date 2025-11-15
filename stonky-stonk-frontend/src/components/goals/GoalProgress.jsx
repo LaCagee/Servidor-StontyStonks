@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { Edit2, Trash2, Plus, Pause, Play, Check, X } from 'lucide-react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
-// Estilos van en App.css en la raíz del backend
-// No necesitamos archivo CSS separado
+import { formatCLP } from '../../utils/currency';
 
 export default function GoalProgress({
   goal,
@@ -23,15 +22,6 @@ export default function GoalProgress({
   const [editTarget, setEditTarget] = useState(goal.targetAmount);
   const [editDeadline, setEditDeadline] = useState(goal.deadline || '');
   const [editDescription, setEditDescription] = useState(goal.description || '');
-
-  // Función para formatear moneda - DEBE SER AL INICIO
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('es-CL', {
-      style: 'currency',
-      currency: 'CLP',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
 
   // Calcular progreso
   const progress = goal.progress || {};
@@ -203,8 +193,8 @@ export default function GoalProgress({
             ></div>
           </div>
           <div className="progress-info">
-            <span className="current-amount">{formatCurrency(currentAmount)}</span>
-            <span className="target-amount">{formatCurrency(targetAmount)}</span>
+            <span className="current-amount">{formatCLP(currentAmount)}</span>
+            <span className="target-amount">{formatCLP(targetAmount)}</span>
           </div>
         </div>
 
@@ -212,7 +202,7 @@ export default function GoalProgress({
         {goal.status !== 'completed' && (
           <div className="remaining-info">
             <p className="remaining-label">Falta por ahorrar:</p>
-            <p className="remaining-amount">{formatCurrency(remaining)}</p>
+            <p className="remaining-amount">{formatCLP(remaining)}</p>
           </div>
         )}
 
@@ -235,10 +225,10 @@ export default function GoalProgress({
           <div className="projection-info">
             <p className="projection-label">Proyección</p>
             <ul className="projection-list">
-              <li>Promedio diario: {formatCurrency(goal.projection.dailyAverage)}</li>
+              <li>Promedio diario: {formatCLP(goal.projection.dailyAverage)}</li>
               {goal.projection.willExceed && (
                 <li className="projection-excess">
-                  Se puede exceder por: {formatCurrency(goal.projection.projectedExcess)}
+                  Se puede exceder por: {formatCLP(goal.projection.projectedExcess)}
                 </li>
               )}
             </ul>

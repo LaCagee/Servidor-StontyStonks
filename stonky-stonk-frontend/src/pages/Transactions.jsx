@@ -6,6 +6,7 @@ import Modal from '../components/ui/Modal';
 import TransactionForm from '../components/transactions/TransactionForm';
 import TransactionList from '../components/transactions/TransactionList';
 import { Plus, Download, Upload, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
+import { formatCLP } from '../utils/currency';
 
 // Base URL - IMPORTANTE: incluir /api
 const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api`;
@@ -323,46 +324,51 @@ export default function Transactions() {
 
   const balance = totalIncome - totalExpenses;
 
-  // Función de formateo
-  const formatMoney = (amount) => {
-    return parseInt(amount || 0).toLocaleString('es-CL');
-  };
-
   return (
     <MainLayout title="Transacciones" balance={balance}>
       <div className="transactions-page">
         {/* Header con Estadísticas */}
         <div className="page-header">
-          <div className="header-stats">
-            <div className="stat-card">
-              <div className="stat-icon income">
-                <TrendingUp size={24} />
-              </div>
-              <div className="stat-content">
-                <span className="stat-label">Total Ingresos</span>
-                <span className="stat-value income">+${formatMoney(totalIncome)}</span>
-              </div>
-            </div>
-
-            <div className="stat-card">
-              <div className="stat-icon expense">
-                <TrendingDown size={24} />
-              </div>
-              <div className="stat-content">
-                <span className="stat-label">Total Gastos</span>
-                <span className="stat-value expense">-${formatMoney(totalExpenses)}</span>
+          <div className="cards-grid cards-grid-3" style={{ marginBottom: '1.5rem' }}>
+            <div className="stat-card card-stonky-success">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="card-label">Total Ingresos</p>
+                  <p className="card-value text-green-400">
+                    +{formatCLP(totalIncome)}
+                  </p>
+                </div>
+                <div className="card-icon">
+                  <TrendingUp />
+                </div>
               </div>
             </div>
 
-            <div className="stat-card">
-              <div className="stat-icon balance">
-                <DollarSign size={24} />
+            <div className="stat-card card-stonky-danger">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="card-label">Total Gastos</p>
+                  <p className="card-value text-red-400">
+                    -{formatCLP(totalExpenses)}
+                  </p>
+                </div>
+                <div className="card-icon">
+                  <TrendingDown />
+                </div>
               </div>
-              <div className="stat-content">
-                <span className="stat-label">Balance</span>
-                <span className={`stat-value ${balance >= 0 ? 'income' : 'expense'}`}>
-                  ${formatMoney(Math.abs(balance))}
-                </span>
+            </div>
+
+            <div className="stat-card card-stonky-primary">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="card-label">Balance</p>
+                  <p className={`card-value ${balance >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {formatCLP(Math.abs(balance))}
+                  </p>
+                </div>
+                <div className="card-icon">
+                  <DollarSign />
+                </div>
               </div>
             </div>
           </div>

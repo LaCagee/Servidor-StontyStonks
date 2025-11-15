@@ -3,6 +3,7 @@ import MainLayout from '../components/layout/MainLayout';
 import Card from '../components/ui/Card';
 import { DollarSign, ArrowUpCircle, ArrowDownCircle, Target, TrendingUp, CreditCard } from 'lucide-react';
 import axios from 'axios';
+import { formatCLP, formatPercentage } from '../utils/currency';
 
 export default function Dashboard() {
   const [transactions, setTransactions] = useState([]);
@@ -191,75 +192,78 @@ export default function Dashboard() {
         </div>
 
         {/* Grid de Métricas Principales - Responsive */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+        <div className="cards-grid cards-grid-4">
           {/* Saldo Total */}
-          <div className="card card-gradient hover:shadow-lg">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <p className="stat-label">Saldo Total</p>
-                <p className="text-3xl md:text-2xl font-bold text-white mt-2">
-                  ${balance.toLocaleString('es-CL')}
+          <div className="stat-card card-stonky-primary">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <p className="card-label">Saldo Total</p>
+                <p className="card-value">
+                  {formatCLP(balance)}
                 </p>
+                <div className={`card-change mt-3 ${parseFloat(balanceChange) >= 0 ? 'card-change-positive' : 'card-change-negative'}`}>
+                  <span>{parseFloat(balanceChange) >= 0 ? '↑' : '↓'}</span>
+                  {parseFloat(balanceChange) >= 0 ? '+' : ''}{formatPercentage(balanceChange)} vs mes anterior
+                </div>
               </div>
-              <div className="stat-icon income">
-                <DollarSign className="w-6 h-6" />
+              <div className="card-icon">
+                <DollarSign />
               </div>
             </div>
-            <p className={`stat-change text-sm ${parseFloat(balanceChange) >= 0 ? 'positive' : 'negative'}`}>
-              <span>{parseFloat(balanceChange) >= 0 ? '↑' : '↓'}</span> {parseFloat(balanceChange) >= 0 ? '+' : ''}{balanceChange}% vs mes anterior
-            </p>
           </div>
 
           {/* Ingresos */}
-          <div className="card card-success hover:shadow-lg">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <p className="stat-label">Ingresos</p>
-                <p className="text-3xl md:text-2xl font-bold text-white mt-2">
-                  ${income.toLocaleString('es-CL')}
+          <div className="stat-card card-stonky-success">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <p className="card-label">Ingresos</p>
+                <p className="card-value">
+                  {formatCLP(income)}
                 </p>
+                <div className={`card-change mt-3 ${parseFloat(incomeChange) >= 0 ? 'card-change-positive' : 'card-change-negative'}`}>
+                  <span>{parseFloat(incomeChange) >= 0 ? '↑' : '↓'}</span>
+                  {parseFloat(incomeChange) >= 0 ? '+' : ''}{formatPercentage(incomeChange)} vs mes anterior
+                </div>
               </div>
-              <div className="stat-icon income">
-                <TrendingUp className="w-6 h-6" />
+              <div className="card-icon">
+                <TrendingUp />
               </div>
             </div>
-            <p className={`stat-change text-sm ${parseFloat(incomeChange) >= 0 ? 'positive' : 'negative'}`}>
-              <span>{parseFloat(incomeChange) >= 0 ? '↑' : '↓'}</span> {parseFloat(incomeChange) >= 0 ? '+' : ''}{incomeChange}% vs mes anterior
-            </p>
           </div>
 
           {/* Gastos */}
-          <div className="card bg-gradient-to-br from-red-900 to-red-800 border-red-700 hover:shadow-lg">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <p className="stat-label">Gastos</p>
-                <p className="text-3xl md:text-2xl font-bold text-white mt-2">
-                  ${expenses.toLocaleString('es-CL')}
+          <div className="stat-card card-stonky-danger">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <p className="card-label">Gastos</p>
+                <p className="card-value">
+                  {formatCLP(expenses)}
                 </p>
+                <div className={`card-change mt-3 ${parseFloat(expenseChange) <= 0 ? 'card-change-positive' : 'card-change-negative'}`}>
+                  <span>{parseFloat(expenseChange) <= 0 ? '↓' : '↑'}</span>
+                  {parseFloat(expenseChange) >= 0 ? '+' : ''}{formatPercentage(expenseChange)} vs mes anterior
+                </div>
               </div>
-              <div className="stat-icon expense">
-                <CreditCard className="w-6 h-6" />
+              <div className="card-icon">
+                <CreditCard />
               </div>
             </div>
-            <p className={`stat-change text-sm ${parseFloat(expenseChange) <= 0 ? 'positive' : 'negative'}`}>
-              <span>{parseFloat(expenseChange) <= 0 ? '↓' : '↑'}</span> {parseFloat(expenseChange) >= 0 ? '+' : ''}{expenseChange}% vs mes anterior
-            </p>
           </div>
 
           {/* Metas Activas */}
-          <div className="card bg-gradient-to-br from-blue-900 to-blue-800 border-blue-700 hover:shadow-lg">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <p className="stat-label">Metas Activas</p>
-                <p className="text-3xl md:text-2xl font-bold text-white mt-2">{goals.length}</p>
+          <div className="stat-card card-stonky-info">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <p className="card-label">Metas Activas</p>
+                <p className="card-value">{goals.length}</p>
+                <div className="card-change card-change-neutral mt-3">
+                  {formatPercentage(previousMonthData?.avgProgress || 0)} completado promedio
+                </div>
               </div>
-              <div className="stat-icon goal">
-                <Target className="w-6 h-6" />
+              <div className="card-icon">
+                <Target />
               </div>
             </div>
-            <p className="stat-change text-blue-300 text-sm">
-              {previousMonthData?.avgProgress || 0}% completado promedio
-            </p>
           </div>
         </div>
 
@@ -351,11 +355,11 @@ export default function Dashboard() {
                         </div>
                       </div>
                       <span className={`text-sm font-semibold whitespace-nowrap ml-2 ${
-                        transaction.type === 'income' 
-                          ? 'text-green-400' 
+                        transaction.type === 'income'
+                          ? 'text-green-400'
                           : 'text-red-400'
                       }`}>
-                        {transaction.type === 'income' ? '+' : '-'}${transaction.amount.toLocaleString('es-CL')}
+                        {transaction.type === 'income' ? '+' : '-'}{formatCLP(transaction.amount)}
                       </span>
                     </div>
                   ))}
@@ -371,38 +375,38 @@ export default function Dashboard() {
 
         {/* Sección de Análisis - Solo en desktop si tenemos datos */}
         {monthlyTrend && monthlyTrend.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            <div className="card">
-              <p className="stat-label mb-2">Promedio Ingresos</p>
-              <p className="text-2xl font-bold text-green-400">
-                ${(
+          <div className="cards-grid cards-grid-4">
+            <div className="info-card">
+              <p className="card-label">Promedio Ingresos</p>
+              <p className="card-value text-green-400">
+                {formatCLP(
                   monthlyTrend.reduce((acc, m) => acc + (m.income || 0), 0) / monthlyTrend.length
-                ).toLocaleString('es-CL')}
+                )}
               </p>
             </div>
-            <div className="card">
-              <p className="stat-label mb-2">Promedio Gastos</p>
-              <p className="text-2xl font-bold text-red-400">
-                ${(
+            <div className="info-card">
+              <p className="card-label">Promedio Gastos</p>
+              <p className="card-value text-red-400">
+                {formatCLP(
                   monthlyTrend.reduce((acc, m) => acc + (m.expense || 0), 0) / monthlyTrend.length
-                ).toLocaleString('es-CL')}
+                )}
               </p>
             </div>
-            <div className="card">
-              <p className="stat-label mb-2">Total Período</p>
-              <p className="text-2xl font-bold text-blue-400">
-                ${(
+            <div className="info-card">
+              <p className="card-label">Total Período</p>
+              <p className="card-value text-blue-400">
+                {formatCLP(
                   monthlyTrend.reduce((acc, m) => acc + ((m.income || 0) - (m.expense || 0)), 0)
-                ).toLocaleString('es-CL')}
+                )}
               </p>
             </div>
-            <div className="card">
-              <p className="stat-label mb-2">Tasa Ahorro</p>
-              <p className="text-2xl font-bold text-yellow-400">
-                {(
-                  (monthlyTrend.reduce((acc, m) => acc + ((m.income || 0) - (m.expense || 0)), 0) / 
+            <div className="info-card">
+              <p className="card-label">Tasa Ahorro</p>
+              <p className="card-value text-yellow-400">
+                {formatPercentage(
+                  (monthlyTrend.reduce((acc, m) => acc + ((m.income || 0) - (m.expense || 0)), 0) /
                   monthlyTrend.reduce((acc, m) => acc + (m.income || 0), 0)) * 100
-                ).toFixed(1)}%
+                )}
               </p>
             </div>
           </div>

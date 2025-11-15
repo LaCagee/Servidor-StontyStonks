@@ -5,19 +5,9 @@ import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import BudgetForm from '../components/budgets/BudgetForm';
 import { Plus, PieChart, AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react';
+import { formatCLP, formatPercentage } from '../utils/currency';
 
 const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api`;
-
-// Función para formatear números a CLP
-const formatCLP = (value) => {
-  if (!value || isNaN(value)) return '$0';
-  return new Intl.NumberFormat('es-CL', {
-    style: 'currency',
-    currency: 'CLP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(value);
-};
 
 export default function Budgets() {
   const [budgets, setBudgets] = useState([]);
