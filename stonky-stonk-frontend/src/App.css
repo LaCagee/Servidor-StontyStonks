@@ -3561,42 +3561,7 @@ input[type="range"]::-moz-range-track {
   margin-bottom: 1rem;
 }
 
-.summary-card {
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
-  border: 1px solid rgba(52, 211, 153, 0.3);
-  border-radius: 1.25rem;
-  padding: 2rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 40px rgba(52, 211, 153, 0.1);
-  position: relative;
-  overflow: hidden;
-}
-
-.summary-card::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  right: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(52, 211, 153, 0.05) 0%, transparent 70%);
-  animation: rotate 20s linear infinite;
-  pointer-events: none;
-}
-
-@keyframes rotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-.summary-card h3 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: white;
-  margin: 0 0 1.5rem 0;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
+/* .summary-card removed - now using cards.css definition */
 
 .summary-grid {
   display: grid;
@@ -3746,19 +3711,7 @@ input[type="range"]::-moz-range-track {
   gap: 2rem;
 }
 
-.chart-card {
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
-  border: 1px solid rgba(52, 211, 153, 0.2);
-  border-radius: 1.25rem;
-  padding: 1.75rem;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-  transition: all 0.3s ease;
-}
-
-.chart-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(52, 211, 153, 0.1);
-}
+/* .chart-card removed - now using cards.css definition */
 
 /* Categories List */
 .categories-list {
@@ -3992,19 +3945,7 @@ input[type="range"]::-moz-range-track {
   gap: 1.5rem;
 }
 
-.info-card {
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
-  border: 1px solid rgba(52, 211, 153, 0.2);
-  border-radius: 1rem;
-  padding: 1.5rem;
-  transition: all 0.3s ease;
-}
-
-.info-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 15px rgba(52, 211, 153, 0.15);
-  border-color: rgba(52, 211, 153, 0.4);
-}
+/* .info-card removed - now using cards.css definition */
 
 .info-card-content {
   display: flex;
@@ -4120,55 +4061,7 @@ input[type="range"]::-moz-range-track {
   gap: 1.5rem;
 }
 
-.metric-card {
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
-  border: 1px solid rgba(52, 211, 153, 0.3);
-  border-radius: 1.25rem;
-  padding: 1.75rem;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
-}
-
-.metric-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: var(--metric-gradient, linear-gradient(90deg, #34d399 0%, #10b981 100%));
-}
-
-.metric-card-primary {
-  --metric-gradient: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
-}
-
-.metric-card-success {
-  --metric-gradient: linear-gradient(90deg, #34d399 0%, #10b981 100%);
-}
-
-.metric-card-warning {
-  --metric-gradient: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
-}
-
-.metric-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), 0 0 25px var(--metric-glow, rgba(52, 211, 153, 0.15));
-}
-
-.metric-card-primary:hover {
-  --metric-glow: rgba(59, 130, 246, 0.15);
-}
-
-.metric-card-success:hover {
-  --metric-glow: rgba(52, 211, 153, 0.15);
-}
-
-.metric-card-warning:hover {
-  --metric-glow: rgba(245, 158, 11, 0.15);
-}
+/* .metric-card removed - now using cards.css definition */
 
 .metric-content {
   display: flex;
