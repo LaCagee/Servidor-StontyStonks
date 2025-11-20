@@ -16,6 +16,7 @@ export default function Budgets() {
   const [editingBudget, setEditingBudget] = useState(null);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [balance, setBalance] = useState(0);
 
   const token = localStorage.getItem('token');
   const axiosConfig = {
@@ -27,14 +28,27 @@ export default function Budgets() {
 
   useEffect(() => {
     loadBudgets();
-    
+    loadBalance();
+
     // Recargar presupuestos cada 10 segundos para verificar cambios de transacciones
     const interval = setInterval(() => {
       loadBudgets();
     }, 10000);
-    
+
     return () => clearInterval(interval);
   }, []);
+
+  // Cargar el balance desde el dashboard
+  const loadBalance = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/dashboard/overview`, axiosConfig);
+      if (response.data.overview?.balance) {
+        setBalance(response.data.overview.balance.currentBalance || 0);
+      }
+    } catch (err) {
+      console.error('Error al cargar balance:', err);
+    }
+  };
 
   // Escuchar cambios de visibilidad (cuando vuelves a la pestaña)
   useEffect(() => {
@@ -154,7 +168,7 @@ export default function Budgets() {
   const totalRemaining = totalAllocated - totalSpent;
 
   return (
-    <MainLayout title="Presupuestos" balance={0}>
+    <MainLayout title="Presupuestos" balance={balance}>
       <div className="budgets-page">
         <div className="page-header">
           <div className="header-info">

@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 import MainLayout from '../components/layout/MainLayout';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import { User, Bell, Shield, CreditCard, Download, Trash2 } from 'lucide-react';
+
+const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'https://stonky-backend.blackdune-587dd75b.westus3.azurecontainerapps.io'}/api`;
 
 export default function Settings() {
   const [settings, setSettings] = useState({
@@ -26,8 +29,30 @@ export default function Settings() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [balance, setBalance] = useState(0);
+
+  const token = localStorage.getItem('token');
+  const axiosConfig = {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  };
+
+  // Cargar el balance desde el dashboard
+  const loadBalance = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/dashboard/overview`, axiosConfig);
+      if (response.data.overview?.balance) {
+        setBalance(response.data.overview.balance.currentBalance || 0);
+      }
+    } catch (err) {
+      console.error('Error al cargar balance:', err);
+    }
+  };
 
   useEffect(() => {
+    loadBalance();
     const loadUserData = async () => {
       setLoading(true);
       // TODO: Reemplazar con llamada al backend
@@ -102,7 +127,7 @@ export default function Settings() {
 
   if (loading) {
     return (
-      <MainLayout title="Configuración" balance={0}>
+      <MainLayout title="Configuración" balance={balance}>
         <div className="loading-screen">
           <div className="spinner"></div>
           <p>Cargando configuración...</p>
@@ -112,7 +137,7 @@ export default function Settings() {
   }
 
   return (
-    <MainLayout title="Configuración" balance={0}>
+    <MainLayout title="Configuración" balance={balance}>
       <div className="settings-page">
         <div className="settings-header">
           <h1 className="page-title">Configuración</h1>

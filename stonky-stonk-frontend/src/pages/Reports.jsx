@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 import MainLayout from '../components/layout/MainLayout';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { Download, Filter, Calendar, BarChart3, TrendingUp, PieChart, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 import { formatCLP } from '../utils/currency';
 
+const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'https://stonky-backend.blackdune-587dd75b.westus3.azurecontainerapps.io'}/api`;
+
 export default function Reports() {
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [balance, setBalance] = useState(0);
   const [filters, setFilters] = useState({
     period: 'month',
     startDate: '2024-01-01',
@@ -15,12 +19,33 @@ export default function Reports() {
   });
   const [hoveredCategory, setHoveredCategory] = useState(null);
 
+  const token = localStorage.getItem('token');
+  const axiosConfig = {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  };
+
+  // Cargar el balance desde el dashboard
+  const loadBalance = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/dashboard/overview`, axiosConfig);
+      if (response.data.overview?.balance) {
+        setBalance(response.data.overview.balance.currentBalance || 0);
+      }
+    } catch (err) {
+      console.error('Error al cargar balance:', err);
+    }
+  };
+
   useEffect(() => {
+    loadBalance();
     const loadReportData = async () => {
       setLoading(true);
       // TODO: Reemplazar con llamada al backend
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
+
       const mockReportData = {
         summary: {
           totalIncome: 450000,
@@ -48,7 +73,7 @@ export default function Reports() {
           { name: 'Transporte', value: 45000, color: '#f59e0b' }
         ]
       };
-      
+
       setReportData(mockReportData);
       setLoading(false);
     };
@@ -64,7 +89,7 @@ export default function Reports() {
 
   if (loading) {
     return (
-      <MainLayout title="Reportes" balance={0}>
+      <MainLayout title="Reportes" balance={balance}>
         <div className="loading-screen">
           <BarChart3 className="loading-icon" />
           <p>Generando reportes...</p>
@@ -74,7 +99,7 @@ export default function Reports() {
   }
 
   return (
-    <MainLayout title="Reportes y Análisis" balance={0}>
+    <MainLayout title="Reportes y Análisis" balance={balance}>
       <div className="reports-page">
         {/* Header */}
         <div className="page-header">
