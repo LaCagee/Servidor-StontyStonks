@@ -43,39 +43,27 @@ export default function Reports() {
     loadBalance();
     const loadReportData = async () => {
       setLoading(true);
-      // TODO: Reemplazar con llamada al backend
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      try {
+        const params = new URLSearchParams({
+          period: filters.period,
+          ...(filters.period === 'custom' && {
+            startDate: filters.startDate,
+            endDate: filters.endDate
+          })
+        });
 
-      const mockReportData = {
-        summary: {
-          totalIncome: 450000,
-          totalExpenses: 275000,
-          netSavings: 175000,
-          savingsRate: 38.9,
-          incomeGrowth: 5.2,
-          expenseGrowth: -2.8
-        },
-        expensesByCategory: [
-          { category: 'Alimentación', amount: 85000, percentage: 30.9, trend: 2.3 },
-          { category: 'Transporte', amount: 45000, percentage: 16.4, trend: -1.5 },
-          { category: 'Entretenimiento', amount: 35000, percentage: 12.7, trend: 4.1 },
-          { category: 'Servicios', amount: 28000, percentage: 10.2, trend: 0.8 },
-          { category: 'Otros', amount: 82000, percentage: 29.8, trend: 3.2 }
-        ],
-        monthlyTrend: [
-          { month: 'Ene', income: 450000, expenses: 275000, savings: 175000 },
-          { month: 'Feb', income: 420000, expenses: 290000, savings: 130000 },
-          { month: 'Mar', income: 480000, expenses: 260000, savings: 220000 }
-        ],
-        topCategories: [
-          { name: 'Alimentación', value: 85000, color: '#10b981' },
-          { name: 'Otros', value: 82000, color: '#06b6d4' },
-          { name: 'Transporte', value: 45000, color: '#f59e0b' }
-        ]
-      };
+        const response = await axios.get(`${API_BASE_URL}/reports/summary?${params}`, axiosConfig);
 
-      setReportData(mockReportData);
-      setLoading(false);
+        if (response.data) {
+          setReportData(response.data);
+        }
+      } catch (err) {
+        console.error('Error al cargar reportes:', err);
+        // En caso de error, mantener datos vacíos
+        setReportData(null);
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadReportData();

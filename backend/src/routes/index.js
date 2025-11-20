@@ -17,6 +17,8 @@ const dashboardRoutes = require('./dashboardRoutes');
 const suggestionRoutes = require('./SuggestionRoutes');
 const goalRoutes = require('./goalRoutes');  // ← NUEVO
 const budgetRoutes = require('./Budgetroutes');
+const analysisRoutes = require('./analysisRoutes');  // ← NUEVO
+const reportsRoutes = require('./reportsRoutes');  // ← NUEVO
 
 
 // Usar rutas
@@ -28,6 +30,8 @@ router.use('/dashboard', dashboardRoutes);
 router.use('/suggestions', suggestionRoutes);
 router.use('/goals', goalRoutes);  // ← NUEVO
 router.use('/budgets', budgetRoutes);
+router.use('/analysis', analysisRoutes);  // ← NUEVO
+router.use('/reports', reportsRoutes);  // ← NUEVO
 
 // Ruta de prueba
 router.get('/', (req, res) => {
@@ -41,8 +45,9 @@ router.get('/', (req, res) => {
       dashboard: '/api/dashboard',
       suggestions: '/api/suggestions',
       goals: '/api/goals',  // ← NUEVO
-      budgets: '/api/budgets'  
-
+      budgets: '/api/budgets',
+      analysis: '/api/analysis',  // ← NUEVO
+      reports: '/api/reports'  // ← NUEVO
     }
   });
 });

@@ -38,56 +38,18 @@ export default function Analysis() {
     loadBalance();
     const loadInsights = async () => {
       setLoading(true);
-      // TODO: Reemplazar con llamada al backend
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const mockInsights = [
-        {
-          id: 1,
-          type: 'savings_opportunity',
-          title: 'Oportunidad de Ahorro',
-          message: 'Podrías ahorrar $45,000 mensuales reduciendo gastos en restaurantes',
-          amount: 45000,
-          category: 'Entretenimiento',
-          confidence: 0.85,
-          actionable: true,
-          priority: 'high',
-          timeframe: '1 mes',
-          impact: 'Alto',
-          recommendation: 'Establece un presupuesto diario para comidas fuera'
-        },
-        {
-          id: 2,
-          type: 'spending_alert',
-          title: 'Alerta de Gasto',
-          message: 'Gastos en transporte superaron el presupuesto en un 25%',
-          amount: 12500,
-          category: 'Transporte',
-          confidence: 0.92,
-          actionable: true,
-          priority: 'critical',
-          timeframe: 'Inmediato',
-          impact: 'Medio',
-          recommendation: 'Revisa los recibos recientes de transporte'
-        },
-        {
-          id: 3,
-          type: 'trend_analysis',
-          title: 'Tendencia Positiva',
-          message: 'Tu tasa de ahorro ha aumentado un 15% este trimestre',
-          amount: 0,
-          category: 'General',
-          confidence: 0.78,
-          actionable: false,
-          priority: 'low',
-          timeframe: 'Trimestre',
-          impact: 'Positivo',
-          recommendation: 'Mantén estos buenos hábitos'
+      try {
+        const response = await axios.get(`${API_BASE_URL}/analysis/insights`, axiosConfig);
+        if (response.data.insights) {
+          setInsights(response.data.insights);
         }
-      ];
-      
-      setInsights(mockInsights);
-      setLoading(false);
+      } catch (err) {
+        console.error('Error al cargar insights:', err);
+        // Mantener array vacío en caso de error
+        setInsights([]);
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadInsights();
