@@ -41,6 +41,14 @@ router.post(
   authController.forgotPassword
 );
 
+// Verificar token de reset de contraseña
+router.post(
+  '/verify-reset-token',
+  authLimiter,
+  validateVerifyEmail, // Reutilizamos este validador porque solo necesita 'token'
+  authController.verifyResetToken
+);
+
 // Restablecer contraseña
 router.post(
   '/reset-password',
@@ -91,6 +99,7 @@ router.get('/', (req, res) => {
         'POST /api/auth/verify-email',
         'POST /api/auth/resend-verification',
         'POST /api/auth/forgot-password',
+        'POST /api/auth/verify-reset-token',
         'POST /api/auth/reset-password'
       ],
       protected: [

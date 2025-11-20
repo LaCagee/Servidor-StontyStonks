@@ -1239,6 +1239,182 @@ input[type="password"].success,
   color: #6ee7b7;
 }
 
+/* Input with icon container */
+.input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.input-with-icon input {
+  padding-left: 3rem;
+  padding-right: 3rem;
+  width: 100%;
+}
+
+.input-with-icon .input-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+  z-index: 1;
+  transition: color 0.3s ease;
+}
+
+.input-with-icon input:focus ~ .input-icon,
+.input-with-icon:focus-within .input-icon {
+  color: #34d399;
+}
+
+/* Toggle password button */
+.toggle-password {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  z-index: 2;
+  border-radius: 0.5rem;
+}
+
+.toggle-password:hover {
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.1);
+}
+
+.toggle-password:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Auth footer */
+.auth-footer {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(52, 211, 153, 0.1);
+  text-align: center;
+}
+
+.auth-link {
+  color: #34d399;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: all 0.3s ease;
+  position: relative;
+  display: inline-block;
+  pointer-events: auto;
+}
+
+.auth-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #34d399, #10b981);
+  transition: width 0.3s ease;
+  pointer-events: none;
+}
+
+.auth-link:hover::after {
+  width: 100%;
+}
+
+.auth-link:hover {
+  color: #6ee7b7;
+}
+
+.auth-link-back {
+  color: #9ca3af;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  pointer-events: auto;
+}
+
+.auth-link-back:hover {
+  color: #34d399;
+}
+
+/* Auth description */
+.auth-description {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: #9ca3af;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.auth-description p {
+  margin: 0;
+}
+
+/* Loading spinner */
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem;
+  text-align: center;
+  color: #9ca3af;
+}
+
+.spinner {
+  width: 3rem;
+  height: 3rem;
+  border: 3px solid rgba(52, 211, 153, 0.1);
+  border-top-color: #34d399;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.auth-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.auth-subtitle {
+  font-size: 0.875rem;
+  color: #9ca3af;
+  margin-top: 0.5rem;
+}
+
+.auth-logo {
+  color: #34d399;
+  margin-bottom: 1rem;
+}
+
 .form-divider {
   display: flex;
   align-items: center;
@@ -3171,6 +3347,127 @@ input[type="range"]::-moz-range-thumb:hover {
 input[type="range"]::-moz-range-track {
   background: transparent;
   border: none;
+}
+
+/* ============ TRANSACTION FORM & LIST STYLES ============ */
+
+/* Transaction Form Container */
+.transaction-form-container {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(52, 211, 153, 0.2);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 20px rgba(52, 211, 153, 0.1);
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Transaction Form Header */
+.transaction-form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(52, 211, 153, 0.1);
+}
+
+.transaction-form-header h2 {
+  margin: 0;
+  font-weight: 700;
+}
+
+/* Transaction Form Body */
+.transaction-form-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Transaction List Container */
+.transaction-list-container {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(52, 211, 153, 0.2);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 20px rgba(52, 211, 153, 0.1);
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Transaction List Header */
+.transaction-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(52, 211, 153, 0.1);
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.transaction-list-header h3 {
+  margin: 0;
+  font-weight: 700;
+}
+
+/* Transaction Item */
+.transaction-item {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.transaction-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(52, 211, 153, 0.5) 0%, rgba(16, 185, 129, 0.5) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.transaction-item:hover::before {
+  opacity: 1;
+}
+
+.transaction-item:hover {
+  transform: translateX(4px);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .transaction-form-container,
+  .transaction-list-container {
+    padding: 1rem;
+    border-radius: 0.875rem;
+  }
+
+  .transaction-form-header,
+  .transaction-list-header {
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+  }
+
+  .transaction-form-body {
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .transaction-form-container,
+  .transaction-list-container {
+    padding: 0.875rem;
+  }
+
+  .transaction-form-header h2,
+  .transaction-list-header h3 {
+    font-size: 1.125rem;
+  }
 }
 
 

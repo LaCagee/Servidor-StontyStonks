@@ -392,6 +392,55 @@ async function forgotPassword(req, res) {
   }
 }
 
+// ==================== VERIFICAR TOKEN DE RESET ====================
+async function verifyResetToken(req, res) {
+  try {
+    const { token: resetToken } = req.body;
+
+    // Buscar token en base de datos
+    const tokenRecord = await Token.findOne({
+      where: { token: resetToken },
+      include: [{
+        model: User,
+        as: 'user'
+      }]
+    });
+
+    // Verificar que el token existe
+    if (!tokenRecord) {
+      return res.status(400).json({
+        error: 'Token inválido o expirado'
+      });
+    }
+
+    // Verificar que el token no esté expirado
+    if (tokenRecord.isExpired()) {
+      return res.status(400).json({
+        error: 'Token expirado'
+      });
+    }
+
+    // Verificar que el token no esté revocado
+    if (tokenRecord.isRevoked()) {
+      return res.status(400).json({
+        error: 'Token ya utilizado'
+      });
+    }
+
+    res.json({
+      message: 'Token válido',
+      valid: true
+    });
+
+  } catch (error) {
+    console.error('Error al verificar token:', error);
+    res.status(500).json({
+      error: 'Error al verificar token',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+}
+
 // ==================== RESTABLECER CONTRASEÑA ====================
 async function resetPassword(req, res) {
   try {
@@ -469,6 +518,7 @@ module.exports = {
   logout,
   getProfile,
   forgotPassword,
+  verifyResetToken,
   resetPassword,
   verifyEmail,
   resendVerification
