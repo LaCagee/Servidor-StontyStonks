@@ -288,12 +288,12 @@ export default function Dashboard() {
                         return (
                           <div key={index} className="flex-1 flex flex-col items-center gap-1">
                             <div className="flex gap-1 h-full items-end w-full justify-center">
-                              <div 
-                                className="bg-gradient-to-t from-green-500 to-green-400 rounded-t-sm flex-1 max-w-2"
+                              <div
+                                className="bg-gradient-to-t from-green-500 to-green-400 rounded-t-sm w-4"
                                 style={{ height: `${incomeHeight}%` }}
                               />
-                              <div 
-                                className="bg-gradient-to-t from-red-500 to-red-400 rounded-t-sm flex-1 max-w-2"
+                              <div
+                                className="bg-gradient-to-t from-red-500 to-red-400 rounded-t-sm w-4"
                                 style={{ height: `${expenseHeight}%` }}
                               />
                             </div>
