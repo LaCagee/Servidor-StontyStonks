@@ -1,17 +1,19 @@
 // ============================================
-// CONTROLADOR DE AUTENTICACIÓN
+// Controlador de Autenticación
+// Acá va toda la lógica para registrar, loguear y gestionar usuarios
 // ============================================
 const { User, Token } = require('../models');
 const { generateAccessToken, generateResetToken, getTokenExpirationDate } = require('../utils/tokenGenerator');
 const { welcomeEmail, resetPasswordEmail, passwordChangedEmail } = require('../utils/emailTemplates');
 const transporter = require('../config/email');
 
-// ==================== REGISTRO DE USUARIO ====================
+// ==================== Registro de Usuario ====================
+// Esta función se encarga de crear un nuevo usuario en el sistema
 async function register(req, res) {
   try {
     const { email, name, password } = req.body;
 
-    // Verificar si el usuario ya existe
+    // Primero chequeamos si el usuario ya existe en la base de datos
     const existingUser = await User.findOne({ where: { email } });
 
     if (existingUser) {
@@ -20,28 +22,28 @@ async function register(req, res) {
       });
     }
 
-    // Crear usuario (el hook beforeCreate hashea la contraseña automáticamente)
+    // Creamos el usuario nuevo (el hook beforeCreate se encarga de hashear la contraseña automáticamente)
     const user = await User.create({
       email,
       name: name || null,
       password,
-      emailVerified: false  // ← Usuario NO verificado al registrarse
+      emailVerified: false  // El usuario parte sin verificar su email
     });
 
-    // Generar token de verificación
-    const verificationToken = generateResetToken(); // Reutilizamos la función
-    const expiresAt = getTokenExpirationDate(24); // Expira en 24 horas
+    // Generamos un token para verificar el email
+    const verificationToken = generateResetToken(); // Reutilizamos esta función que genera tokens
+    const expiresAt = getTokenExpirationDate(24); // El token expira en 24 horas
       console.log("===========================TOKEN DE VERIFICACIÓN===================================");
-      console.log(`Token de verificación para ${user.email}: ` + verificationToken); // borrar en producción, simplemente se uso para usar el token en postman para pruebas
+      console.log(`Token de verificación para ${user.email}: ` + verificationToken); // TODO: borrar esto en producción, solo para debugging
       console.log("=================================================================================");
-    // Guardar token en base de datos
+    // Guardamos el token en la base de datos
     await Token.create({
       token: verificationToken,
       userId: user.id,
       expiresAt
     });
 
-    // Enviar email de verificación
+    // Armamos y enviamos el email de verificación
     const { verificationEmail } = require('../utils/emailTemplates');
     const emailContent = verificationEmail(user.name || user.email, verificationToken);
 
@@ -52,7 +54,7 @@ async function register(req, res) {
       html: emailContent.html
     }).catch(err => {
       console.error('Error al enviar email de verificación:', err);
-      // No bloqueamos el registro si falla el email
+      // Si falla el email no bloqueamos el registro igual
     });
 
     res.status(201).json({
@@ -74,12 +76,13 @@ async function register(req, res) {
     });
   }
 }
-// ==================== VERIFICAR EMAIL ====================
+// ==================== Verificar Email ====================
+// Acá validamos el token que el usuario recibió por email
 async function verifyEmail(req, res) {
   try {
     const { token: verificationToken } = req.body;
 
-    // Buscar token en base de datos
+    // Buscamos el token en la base de datos
     const tokenRecord = await Token.findOne({
       where: { token: verificationToken },
       include: [{
@@ -88,21 +91,21 @@ async function verifyEmail(req, res) {
       }]
     });
 
-    // Verificar que el token existe
+    // Chequeamos que el token exista
     if (!tokenRecord) {
       return res.status(400).json({
         error: 'Token de verificación inválido o expirado'
       });
     }
 
-    // Verificar que el token no esté expirado
+    // Verificamos que el token no haya expirado
     if (tokenRecord.isExpired()) {
       return res.status(400).json({
         error: 'El token de verificación ha expirado. Solicita uno nuevo.'
       });
     }
 
-    // Verificar que el token no esté revocado
+    // Verificamos que el token no haya sido usado antes
     if (tokenRecord.isRevoked()) {
       return res.status(400).json({
         error: 'Token ya utilizado'
@@ -111,20 +114,20 @@ async function verifyEmail(req, res) {
 
     const user = tokenRecord.user;
 
-    // Verificar si el usuario ya está verificado
+    // Chequeamos si el usuario ya estaba verificado
     if (user.emailVerified) {
       return res.status(400).json({
         error: 'El correo ya ha sido verificado previamente'
       });
     }
 
-    // Marcar usuario como verificado
-    await user.verifyEmail(); // Método del modelo User
+    // Marcamos al usuario como verificado
+    await user.verifyEmail(); // Este método está en el modelo User
 
-    // Revocar el token de verificación
+    // Revocamos el token para que no se pueda usar de nuevo
     await tokenRecord.revoke();
 
-    // Enviar email de bienvenida ahora que está verificado
+    // Enviamos el email de bienvenida porque ya verificó su cuenta
     const emailContent = welcomeEmail(user.name || user.email);
     transporter.sendMail({
       from: process.env.EMAIL_FROM,
@@ -155,29 +158,30 @@ async function verifyEmail(req, res) {
   }
 }
 
-// ==================== REENVIAR EMAIL DE VERIFICACIÓN ====================
+// ==================== Reenviar Email de Verificación ====================
+// Por si el usuario perdió el email original o expiró el token
 async function resendVerification(req, res) {
   try {
     const { email } = req.body;
 
-    // Buscar usuario
+    // Buscamos el usuario
     const user = await User.findOne({ where: { email } });
 
     if (!user) {
-      // Por seguridad, no revelamos si el email existe
+      // Por seguridad, no le decimos al usuario si el email existe o no
       return res.json({
         message: 'Si el correo está registrado, recibirás un nuevo email de verificación'
       });
     }
 
-    // Verificar si ya está verificado
+    // Chequeamos si ya estaba verificado
     if (user.emailVerified) {
       return res.status(400).json({
         error: 'Este correo ya ha sido verificado'
       });
     }
 
-    // Revocar tokens de verificación anteriores del usuario
+    // Borramos los tokens anteriores que no se hayan usado
     await Token.destroy({
       where: {
         userId: user.id,
@@ -185,18 +189,18 @@ async function resendVerification(req, res) {
       }
     });
 
-    // Generar nuevo token de verificación
+    // Generamos un nuevo token fresco
     const verificationToken = generateResetToken();
     const expiresAt = getTokenExpirationDate(24);
 
-    // Guardar nuevo token
+    // Guardamos el nuevo token
     await Token.create({
       token: verificationToken,
       userId: user.id,
       expiresAt
     });
 
-    // Enviar email de verificación
+    // Enviamos el email de verificación de nuevo
     const { verificationEmail } = require('../utils/emailTemplates');
     const emailContent = verificationEmail(user.name || user.email, verificationToken);
 
@@ -219,12 +223,13 @@ async function resendVerification(req, res) {
     });
   }
 }
-// ==================== INICIO DE SESIÓN ====================
+// ==================== Inicio de Sesión ====================
+// Acá el usuario se loguea con email y contraseña
 async function login(req, res) {
   try {
     const { email, password } = req.body;
 
-    // Buscar usuario por email
+    // Buscamos el usuario por su email
     const user = await User.findOne({ where: { email } });
 
     if (!user) {
@@ -233,7 +238,7 @@ async function login(req, res) {
       });
     }
 
-    // Verificar contraseña (método del modelo User)
+    // Verificamos que la contraseña sea correcta (usa bcrypt para comparar)
     const isPasswordValid = await user.comparePassword(password);
 
     if (!isPasswordValid) {
@@ -242,13 +247,13 @@ async function login(req, res) {
       });
     }
 
-    // Generar token JWT
+    // Generamos el token JWT para la sesión
     const accessToken = generateAccessToken(user.id);
 
-    // Calcular fecha de expiración
-    const expiresAt = getTokenExpirationDate(24); // 24 horas
+    // Calculamos cuándo expira el token (24 horas)
+    const expiresAt = getTokenExpirationDate(24);
 
-    // Guardar token en base de datos
+    // Guardamos el token en la base de datos
     await Token.create({
       token: accessToken,
       userId: user.id,
@@ -276,10 +281,11 @@ async function login(req, res) {
   }
 }
 
-// ==================== CERRAR SESIÓN ====================
+// ==================== Cerrar Sesión ====================
+// Acá revocamos el token para que el usuario salga de la sesión
 async function logout(req, res) {
   try {
-    // El token viene del middleware authMiddleware (req.token)
+    // El token lo sacamos del middleware authMiddleware que lo pone en req.token
     const tokenString = req.token;
 
     if (!tokenString) {
@@ -288,11 +294,11 @@ async function logout(req, res) {
       });
     }
 
-    // Buscar y revocar el token
+    // Buscamos el token y lo revocamos
     const token = await Token.findOne({ where: { token: tokenString } });
 
     if (token) {
-      await token.revoke(); // Método del modelo Token
+      await token.revoke(); // Este método está en el modelo Token
     }
 
     res.json({
@@ -308,12 +314,13 @@ async function logout(req, res) {
   }
 }
 
-// ==================== OBTENER PERFIL ====================
+// ==================== Obtener Perfil ====================
+// Devuelve los datos del usuario que está logueado
 async function getProfile(req, res) {
   try {
-    // El userId viene del middleware authMiddleware (req.userId)
+    // El userId lo sacamos del middleware authMiddleware
     const user = await User.findByPk(req.userId, {
-      attributes: { exclude: ['password'] } // No devolver contraseña
+      attributes: { exclude: ['password'] } // No devolvemos la contraseña por seguridad
     });
 
     if (!user) {
@@ -343,33 +350,34 @@ async function getProfile(req, res) {
   }
 }
 
-// ==================== SOLICITAR RECUPERACIÓN DE CONTRASEÑA ====================
+// ==================== Solicitar Recuperación de Contraseña ====================
+// El usuario olvidó su contraseña y pide un link para resetearla
 async function forgotPassword(req, res) {
   try {
     const { email } = req.body;
 
-    // Buscar usuario
+    // Buscamos al usuario
     const user = await User.findOne({ where: { email } });
 
-    // Por seguridad, siempre devolvemos el mismo mensaje (aunque el usuario no exista)
+    // Por seguridad, siempre respondemos lo mismo aunque el email no exista
     if (!user) {
       return res.json({
         message: 'Si el correo existe, recibirás instrucciones para restablecer tu contraseña'
       });
     }
 
-    // Generar token de recuperación
+    // Generamos un token para resetear la contraseña
     const resetToken = generateResetToken();
-    const expiresAt = getTokenExpirationDate(1); // Expira en 1 hora
+    const expiresAt = getTokenExpirationDate(1); // Este token expira en 1 hora
 
-    // Guardar token en base de datos
+    // Guardamos el token en la base de datos
     await Token.create({
       token: resetToken,
       userId: user.id,
       expiresAt
     });
 
-    // Enviar email con el token
+    // Armamos y enviamos el email con el link de reset
     const emailContent = resetPasswordEmail(user.name || user.email, resetToken);
 
     await transporter.sendMail({
@@ -392,12 +400,13 @@ async function forgotPassword(req, res) {
   }
 }
 
-// ==================== RESTABLECER CONTRASEÑA ====================
-async function resetPassword(req, res) {
+// ==================== Verificar Token de Reset ====================
+// Antes de mostrar el formulario, chequeamos si el token es válido
+async function verifyResetToken(req, res) {
   try {
-    const { token: resetToken, password } = req.body;
+    const { token: resetToken } = req.body;
 
-    // Buscar token en base de datos
+    // Buscamos el token en la base de datos
     const tokenRecord = await Token.findOne({
       where: { token: resetToken },
       include: [{
@@ -406,39 +415,89 @@ async function resetPassword(req, res) {
       }]
     });
 
-    // Verificar que el token existe
+    // Verificamos que el token exista
     if (!tokenRecord) {
       return res.status(400).json({
         error: 'Token inválido o expirado'
       });
     }
 
-    // Verificar que el token no esté expirado
+    // Chequeamos que no haya expirado
     if (tokenRecord.isExpired()) {
       return res.status(400).json({
         error: 'Token expirado'
       });
     }
 
-    // Verificar que el token no esté revocado
+    // Verificamos que no se haya usado antes
     if (tokenRecord.isRevoked()) {
       return res.status(400).json({
         error: 'Token ya utilizado'
       });
     }
 
-    // Actualizar contraseña del usuario
+    res.json({
+      message: 'Token válido',
+      valid: true
+    });
+
+  } catch (error) {
+    console.error('Error al verificar token:', error);
+    res.status(500).json({
+      error: 'Error al verificar token',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+}
+
+// ==================== Restablecer Contraseña ====================
+// Acá el usuario pone su nueva contraseña y la guardamos
+async function resetPassword(req, res) {
+  try {
+    const { token: resetToken, password } = req.body;
+
+    // Buscamos el token en la base de datos
+    const tokenRecord = await Token.findOne({
+      where: { token: resetToken },
+      include: [{
+        model: User,
+        as: 'user'
+      }]
+    });
+
+    // Verificamos que el token exista
+    if (!tokenRecord) {
+      return res.status(400).json({
+        error: 'Token inválido o expirado'
+      });
+    }
+
+    // Chequeamos que no haya expirado
+    if (tokenRecord.isExpired()) {
+      return res.status(400).json({
+        error: 'Token expirado'
+      });
+    }
+
+    // Verificamos que no se haya usado antes
+    if (tokenRecord.isRevoked()) {
+      return res.status(400).json({
+        error: 'Token ya utilizado'
+      });
+    }
+
+    // Actualizamos la contraseña del usuario
     const user = tokenRecord.user;
-    user.password = password; // El hook beforeUpdate hashea automáticamente
+    user.password = password; // El hook beforeUpdate hashea la contraseña automáticamente
     await user.save();
 
-    // Revocar el token de recuperación
+    // Revocamos el token de recuperación para que no se pueda usar de nuevo
     await tokenRecord.revoke();
 
-    // Revocar todos los tokens de sesión del usuario (por seguridad)
+    // Por seguridad, cerramos todas las sesiones activas del usuario
     await Token.revokeAllUserTokens(user.id);
 
-    // Enviar email de confirmación
+    // Enviamos un email de confirmación avisando que se cambió la contraseña
     const emailContent = passwordChangedEmail(user.name || user.email);
     transporter.sendMail({
       from: process.env.EMAIL_FROM,
@@ -462,13 +521,14 @@ async function resetPassword(req, res) {
   }
 }
 
-// ==================== EXPORTAR ====================
+// ==================== Exportamos todas las funciones ====================
 module.exports = {
   register,
   login,
   logout,
   getProfile,
   forgotPassword,
+  verifyResetToken,
   resetPassword,
   verifyEmail,
   resendVerification

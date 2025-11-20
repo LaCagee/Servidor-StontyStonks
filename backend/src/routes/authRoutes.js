@@ -1,5 +1,6 @@
 // ============================================
-// RUTAS DE AUTENTICACIÓN
+// Rutas de Autenticación
+// Acá definimos todas las rutas para login, registro, etc.
 // ============================================
 const express = require('express');
 const router = express.Router();
@@ -15,17 +16,17 @@ const {
   validateResendVerification
 } = require('../validators/authValidator');
 
-// ==================== RUTAS PÚBLICAS ====================
+// ==================== Rutas Públicas (no necesitan login) ====================
 
-// Registro de usuario
+// Ruta para registrar un nuevo usuario
 router.post(
   '/register',
-  authLimiter,           // Rate limiting
-  validateRegister,      // Validación
+  authLimiter,           // Limitamos requests para evitar spam
+  validateRegister,      // Validamos que los datos sean correctos
   authController.register
 );
 
-// Inicio de sesión
+// Ruta para hacer login
 router.post(
   '/login',
   authLimiter,
@@ -33,7 +34,7 @@ router.post(
   authController.login
 );
 
-// Solicitar recuperación de contraseña
+// Ruta para pedir reset de contraseña
 router.post(
   '/forgot-password',
   authLimiter,
@@ -41,7 +42,15 @@ router.post(
   authController.forgotPassword
 );
 
-// Restablecer contraseña
+// Ruta para verificar si el token de reset es válido
+router.post(
+  '/verify-reset-token',
+  authLimiter,
+  validateVerifyEmail, // Reutilizamos este validador porque solo necesita 'token'
+  authController.verifyResetToken
+);
+
+// Ruta para cambiar la contraseña con el token de reset
 router.post(
   '/reset-password',
   authLimiter,
@@ -49,14 +58,14 @@ router.post(
   authController.resetPassword
 );
 
-// Verificar email
+// Ruta para verificar el email con el token que le llegó al usuario
 router.post(
   '/verify-email',
   validateVerifyEmail,
   authController.verifyEmail
 );
 
-// Reenviar email de verificación
+// Ruta para reenviar el email de verificación
 router.post(
   '/resend-verification',
   authLimiter,
@@ -64,23 +73,23 @@ router.post(
   authController.resendVerification
 );
 
-// ==================== RUTAS PROTEGIDAS ====================
+// ==================== Rutas Protegidas (necesitan estar logueado) ====================
 
-// Cerrar sesión (requiere autenticación)
+// Ruta para cerrar sesión
 router.post(
   '/logout',
-  authMiddleware,
+  authMiddleware,  // Middleware que chequea que esté logueado
   authController.logout
 );
 
-// Obtener perfil del usuario (requiere autenticación)
+// Ruta para obtener los datos del perfil del usuario logueado
 router.get(
   '/profile',
-  authMiddleware,
+  authMiddleware,  // Middleware que chequea que esté logueado
   authController.getProfile
 );
 
-// ==================== RUTA DE PRUEBA ====================
+// ==================== Ruta de Prueba (para ver qué endpoints hay disponibles) ====================
 router.get('/', (req, res) => {
   res.json({
     message: 'Auth API - StonkyStonk',
@@ -91,6 +100,7 @@ router.get('/', (req, res) => {
         'POST /api/auth/verify-email',
         'POST /api/auth/resend-verification',
         'POST /api/auth/forgot-password',
+        'POST /api/auth/verify-reset-token',
         'POST /api/auth/reset-password'
       ],
       protected: [

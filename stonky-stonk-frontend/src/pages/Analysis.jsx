@@ -1,16 +1,41 @@
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 import MainLayout from '../components/layout/MainLayout';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { TrendingUp, AlertTriangle, Lightbulb, Target, ChevronRight, CheckCircle, Clock, Zap } from 'lucide-react';
 import { formatCLP } from '../utils/currency';
 
+const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'https://stonky-backend.blackdune-587dd75b.westus3.azurecontainerapps.io'}/api`;
+
 export default function Analysis() {
   const [insights, setInsights] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [balance, setBalance] = useState(0);
   const [expandedInsight, setExpandedInsight] = useState(null);
 
+  const token = localStorage.getItem('token');
+  const axiosConfig = {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  };
+
+  // Cargar el balance desde el dashboard
+  const loadBalance = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/dashboard/overview`, axiosConfig);
+      if (response.data.overview?.balance) {
+        setBalance(response.data.overview.balance.currentBalance || 0);
+      }
+    } catch (err) {
+      console.error('Error al cargar balance:', err);
+    }
+  };
+
   useEffect(() => {
+    loadBalance();
     const loadInsights = async () => {
       setLoading(true);
       // TODO: Reemplazar con llamada al backend
@@ -100,7 +125,7 @@ export default function Analysis() {
   const potentialSavings = insights.reduce((sum, i) => sum + i.amount, 0);
 
   return (
-    <MainLayout title="Análisis" balance={0}>
+    <MainLayout title="Análisis" balance={balance}>
       <div className="analysis-page">
         {/* Header */}
         <div className="page-header">

@@ -1,10 +1,10 @@
 /* ============================================================
    STONKYSTONK - CSS ULTRA RESPONSIVE CON EFECTOS VISUALES
-   Ultra Responsive Design + Advanced Visual Effects
-   FIXED: pointer-events issues
+   Diseño super responsive + efectos visuales avanzados
+   Arreglado: problemas con pointer-events
    ============================================================ */
 
-/* ============ RESET Y BASE ============ */
+/* ============ Reseteo y Estilos Base ============ */
 
 * {
   box-sizing: border-box;
@@ -35,7 +35,7 @@ body {
   width: 100%;
 }
 
-/* ============ SCROLL BEHAVIOR ============ */
+/* ============ Comportamiento del Scroll (scrollbar bonito) ============ */
 
 ::-webkit-scrollbar {
   width: 8px;
@@ -55,7 +55,7 @@ body {
   background: linear-gradient(180deg, #6ee7b7 0%, #34d399 100%);
 }
 
-/* ============ LAYOUT PRINCIPAL ============ */
+/* ============ Layout Principal de la App ============ */
 
 .layout-container {
   display: flex;
@@ -124,7 +124,7 @@ body {
   }
 }
 
-/* ============ SIDEBAR ULTRA RESPONSIVE ============ */
+/* ============ Sidebar Ultra Responsive (menú lateral) ============ */
 
 aside {
   position: fixed;
@@ -146,7 +146,7 @@ aside {
   pointer-events: auto;
 }
 
-/* Scrollbar del sidebar */
+/* Scrollbar bonito para el sidebar */
 aside::-webkit-scrollbar {
   width: 6px;
 }
@@ -177,7 +177,7 @@ aside.-translate-x-full {
   pointer-events: none;
 }
 
-/* Header del Sidebar */
+/* Header del Sidebar (parte de arriba) */
 aside > div:first-child {
   padding: 1.5rem;
   border-bottom: 1px solid rgba(52, 211, 153, 0.1);
@@ -220,7 +220,7 @@ aside > div:first-child h1 {
   background-clip: text;
 }
 
-/* Botón cerrar */
+/* Botón para cerrar el sidebar */
 aside button.md\:hidden {
   background: rgba(52, 211, 153, 0.1);
   border: none;
@@ -244,7 +244,7 @@ aside button.md\:hidden svg {
   height: 1.5rem;
 }
 
-/* Navegación */
+/* Links de navegación del sidebar */
 aside nav {
   margin-top: 1.5rem;
   flex: 1;
@@ -303,7 +303,7 @@ aside nav a:hover {
   transform: translateX(5px);
 }
 
-/* Link activo */
+/* Estilo para el link activo (página actual) */
 aside nav a[aria-current="page"] {
   background: linear-gradient(90deg, rgba(52, 211, 153, 0.2) 0%, transparent 100%);
   color: #34d399;
@@ -347,7 +347,7 @@ aside nav a[aria-current="page"] svg {
   color: #34d399;
 }
 
-/* Footer del Sidebar */
+/* Footer del Sidebar (parte de abajo) */
 aside > div:last-child {
   padding: 1.5rem 0.75rem;
   border-top: 1px solid rgba(52, 211, 153, 0.1);
@@ -421,7 +421,7 @@ aside > div:last-child button:hover svg {
   transform: rotate(-15deg);
 }
 
-/* Overlay para móvil */
+/* Overlay oscuro para móvil (cuando se abre el sidebar) */
 .sidebar-overlay {
   position: fixed;
   inset: 0;
@@ -437,7 +437,7 @@ aside > div:last-child button:hover svg {
   backdrop-filter: blur(4px);
 }
 
-/* Responsive Sidebar */
+/* Estilos responsive para el Sidebar */
 @media (min-width: 768px) {
   aside {
     position: static !important;
@@ -485,7 +485,7 @@ aside > div:last-child button:hover svg {
   }
 }
 
-/* ============ NAVBAR ULTRA RESPONSIVE ============ */
+/* ============ Navbar Ultra Responsive (barra superior) ============ */
 
 .navbar {
   display: flex;
@@ -632,7 +632,7 @@ aside > div:last-child button:hover svg {
   }
 }
 
-/* ============ GRID RESPONSIVO ULTRA ============ */
+/* ============ Sistema de Grid Responsivo ============ */
 
 .grid {
   display: grid;
@@ -671,7 +671,7 @@ aside > div:last-child button:hover svg {
   }
 }
 
-/* ============ FLEXBOX UTILITIES ============ */
+/* ============ Utilidades de Flexbox ============ */
 
 .flex {
   display: flex;
@@ -697,7 +697,7 @@ aside > div:last-child button:hover svg {
 .gap-4 { gap: 1rem; }
 .gap-6 { gap: 1.5rem; }
 
-/* ============ ESPACIADO ============ */
+/* ============ Espaciado (margins y paddings) ============ */
 
 .p-1 { padding: 0.25rem; }
 .p-2 { padding: 0.5rem; }
@@ -752,7 +752,7 @@ aside > div:last-child button:hover svg {
 .mr-2 { margin-right: 0.5rem; }
 .mr-4 { margin-right: 1rem; }
 
-/* ============ TAMAÑOS ============ */
+/* ============ Tamaños de Width y Height ============ */
 
 .w-full { width: 100%; }
 .w-auto { width: auto; }
@@ -769,7 +769,7 @@ aside > div:last-child button:hover svg {
 .min-h-screen { min-height: 100vh; }
 .min-h-96 { min-height: 24rem; }
 
-/* ============ TIPOGRAFÍA ============ */
+/* ============ Tipografía (fuentes y tamaños de texto) ============ */
 
 .text-xs { font-size: 0.75rem; }
 .text-sm { font-size: 0.875rem; }
@@ -808,7 +808,7 @@ aside > div:last-child button:hover svg {
 .text-blue-400 { color: #60a5fa; }
 .text-yellow-400 { color: #facc15; }
 
-/* ============ FONDOS ============ */
+/* ============ Fondos y Backgrounds ============ */
 
 .bg-transparent { background-color: transparent; }
 .bg-slate-700 { background-color: #334155; }
@@ -827,7 +827,7 @@ aside > div:last-child button:hover svg {
 .bg-opacity-20 { background-color: rgba(0, 0, 0, 0.2); }
 .bg-opacity-50 { background-color: rgba(0, 0, 0, 0.5); }
 
-/* ============ BORDES ============ */
+/* ============ Bordes y Border Radius ============ */
 
 .border { border-width: 1px; }
 .border-2 { border-width: 2px; }
@@ -846,7 +846,7 @@ aside > div:last-child button:hover svg {
 .rounded-2xl { border-radius: 1rem; }
 .rounded-full { border-radius: 9999px; }
 
-/* ============ SOMBRAS CON EFECTOS ============ */
+/* ============ Sombras con Efectos Bonitos ============ */
 
 .shadow-sm { box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); }
 .shadow { box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 0 10px rgba(52, 211, 153, 0.05); }
@@ -870,7 +870,7 @@ aside > div:last-child button:hover svg {
               0 0 40px rgba(220, 38, 38, 0.2);
 }
 
-/* ============ TRANSICIONES Y TRANSFORMES ============ */
+/* ============ Transiciones y Transformaciones ============ */
 
 .transition-all { transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1); }
 .transition-colors { transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, color 0.15s ease-in-out; }
@@ -921,7 +921,7 @@ aside > div:last-child button:hover svg {
   transform: translateY(-4px);
 }
 
-/* ============ FORMULARIOS CON EFECTOS ============ */
+/* ============ Formularios con Efectos Visuales ============ */
 
 .form-group {
   display: flex;
@@ -1077,7 +1077,7 @@ input[type="password"].success,
               inset 0 0 0 1px rgba(16, 185, 129, 0.1);
 }
 
-/* ============ AUTH PAGES CON EFECTOS ============ */
+/* ============ Páginas de Autenticación con Efectos ============ */
 
 .auth-container {
   display: flex;
@@ -1237,6 +1237,182 @@ input[type="password"].success,
 
 .auth-links a:hover {
   color: #6ee7b7;
+}
+
+/* Input with icon container */
+.input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.input-with-icon input {
+  padding-left: 3rem;
+  padding-right: 3rem;
+  width: 100%;
+}
+
+.input-with-icon .input-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+  z-index: 1;
+  transition: color 0.3s ease;
+}
+
+.input-with-icon input:focus ~ .input-icon,
+.input-with-icon:focus-within .input-icon {
+  color: #34d399;
+}
+
+/* Toggle password button */
+.toggle-password {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  z-index: 2;
+  border-radius: 0.5rem;
+}
+
+.toggle-password:hover {
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.1);
+}
+
+.toggle-password:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Auth footer */
+.auth-footer {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(52, 211, 153, 0.1);
+  text-align: center;
+}
+
+.auth-link {
+  color: #34d399;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: all 0.3s ease;
+  position: relative;
+  display: inline-block;
+  pointer-events: auto;
+}
+
+.auth-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #34d399, #10b981);
+  transition: width 0.3s ease;
+  pointer-events: none;
+}
+
+.auth-link:hover::after {
+  width: 100%;
+}
+
+.auth-link:hover {
+  color: #6ee7b7;
+}
+
+.auth-link-back {
+  color: #9ca3af;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  pointer-events: auto;
+}
+
+.auth-link-back:hover {
+  color: #34d399;
+}
+
+/* Auth description */
+.auth-description {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: #9ca3af;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.auth-description p {
+  margin: 0;
+}
+
+/* Loading spinner */
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem;
+  text-align: center;
+  color: #9ca3af;
+}
+
+.spinner {
+  width: 3rem;
+  height: 3rem;
+  border: 3px solid rgba(52, 211, 153, 0.1);
+  border-top-color: #34d399;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.auth-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.auth-subtitle {
+  font-size: 0.875rem;
+  color: #9ca3af;
+  margin-top: 0.5rem;
+}
+
+.auth-logo {
+  color: #34d399;
+  margin-bottom: 1rem;
 }
 
 .form-divider {
@@ -1862,7 +2038,7 @@ input[type="password"].success,
   }
 }
 
-/* ============ BOTONES CON EFECTOS ============ */
+/* ============ Botones con Efectos Visuales ============ */
 
 .btn {
   display: inline-flex;
@@ -2479,7 +2655,7 @@ input[type="password"].success,
   color: #fff;
 }
 
-/* ============ ESPACIADO ============ */
+/* ============ Espaciado (margins y paddings) ============ */
 
 .space-y-6 > * + * {
   margin-top: 1.5rem;
@@ -3171,6 +3347,127 @@ input[type="range"]::-moz-range-thumb:hover {
 input[type="range"]::-moz-range-track {
   background: transparent;
   border: none;
+}
+
+/* ============ TRANSACTION FORM & LIST STYLES ============ */
+
+/* Transaction Form Container */
+.transaction-form-container {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(52, 211, 153, 0.2);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 20px rgba(52, 211, 153, 0.1);
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Transaction Form Header */
+.transaction-form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(52, 211, 153, 0.1);
+}
+
+.transaction-form-header h2 {
+  margin: 0;
+  font-weight: 700;
+}
+
+/* Transaction Form Body */
+.transaction-form-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Transaction List Container */
+.transaction-list-container {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(52, 211, 153, 0.2);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 20px rgba(52, 211, 153, 0.1);
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Transaction List Header */
+.transaction-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(52, 211, 153, 0.1);
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.transaction-list-header h3 {
+  margin: 0;
+  font-weight: 700;
+}
+
+/* Transaction Item */
+.transaction-item {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.transaction-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(52, 211, 153, 0.5) 0%, rgba(16, 185, 129, 0.5) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.transaction-item:hover::before {
+  opacity: 1;
+}
+
+.transaction-item:hover {
+  transform: translateX(4px);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .transaction-form-container,
+  .transaction-list-container {
+    padding: 1rem;
+    border-radius: 0.875rem;
+  }
+
+  .transaction-form-header,
+  .transaction-list-header {
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+  }
+
+  .transaction-form-body {
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .transaction-form-container,
+  .transaction-list-container {
+    padding: 0.875rem;
+  }
+
+  .transaction-form-header h2,
+  .transaction-list-header h3 {
+    font-size: 1.125rem;
+  }
 }
 
 

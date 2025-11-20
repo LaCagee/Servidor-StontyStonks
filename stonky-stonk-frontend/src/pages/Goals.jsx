@@ -14,6 +14,7 @@ export default function Goals() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState(null);
+  const [balance, setBalance] = useState(0);
   const token = localStorage.getItem('token');
 
   // Configurar headers con token
@@ -23,10 +24,23 @@ export default function Goals() {
     },
   };
 
-  // Cargar todas las metas
+  // Cargar todas las metas y el balance
   useEffect(() => {
     loadGoals();
+    loadBalance();
   }, []);
+
+  // Cargar el balance desde el dashboard
+  const loadBalance = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/dashboard/overview`, axiosConfig);
+      if (response.data.overview?.balance) {
+        setBalance(response.data.overview.balance.currentBalance || 0);
+      }
+    } catch (err) {
+      console.error('Error al cargar balance:', err);
+    }
+  };
 
   const loadGoals = async () => {
     try {
@@ -250,7 +264,7 @@ export default function Goals() {
 
   if (loading) {
     return (
-      <MainLayout title="Metas de Ahorro" balance={0}>
+      <MainLayout title="Metas de Ahorro" balance={balance}>
         <div className="loading-screen">
           <div className="loading-spinner"></div>
           <p>Cargando tus metas...</p>
@@ -260,7 +274,7 @@ export default function Goals() {
   }
 
   return (
-    <MainLayout title="Metas de Ahorro" balance={0}>
+    <MainLayout title="Metas de Ahorro" balance={balance}>
       <div className="goals-page">
         {/* Error Message */}
         {error && (
