@@ -19,7 +19,7 @@
     }
   },
   "globalHeaders": {
-    "content-security-policy": "default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://stontystonks-ghfud7ehd5fwcpfj.brazilsouth-01.azurewebsites.net https:",
+    "content-security-policy": "default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://stonky-backend.blackdune-587dd75b.westus3.azurecontainerapps.io https:",
     "X-Frame-Options": "DENY",
     "X-Content-Type-Options": "nosniff"
   },
