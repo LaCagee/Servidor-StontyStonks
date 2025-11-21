@@ -969,7 +969,7 @@ label {
   letter-spacing: 0.5px;
 }
 
-/* Inputs, Textareas, Selects */
+/* estilos pa inputs, textareas y selects */
 input[type="text"],
 input[type="email"],
 input[type="password"],
@@ -1052,7 +1052,7 @@ select {
   appearance: none;
 }
 
-/* Estados de inputs */
+/* estados de inputs (error, success, etc) */
 input[type="text"].error,
 input[type="email"].error,
 input[type="password"].error,
@@ -1091,7 +1091,7 @@ input[type="password"].success,
   pointer-events: auto;
 }
 
-/* Animated background */
+/* fondo animado que gira (se ve re copado) */
 .auth-container::before {
   content: '';
   position: absolute;
@@ -1239,7 +1239,7 @@ input[type="password"].success,
   color: #6ee7b7;
 }
 
-/* Input with icon container */
+/* contenedor de input con iconito al lado */
 .input-with-icon {
   position: relative;
   display: flex;
@@ -1269,7 +1269,7 @@ input[type="password"].success,
   color: #34d399;
 }
 
-/* Toggle password button */
+/* boton pa mostrar/ocultar la contraseña */
 .toggle-password {
   position: absolute;
   right: 0.75rem;
@@ -1298,7 +1298,7 @@ input[type="password"].success,
   cursor: not-allowed;
 }
 
-/* Auth footer */
+/* pie de página del login/registro */
 .auth-footer {
   margin-top: 1.5rem;
   padding-top: 1.5rem;
@@ -1353,7 +1353,7 @@ input[type="password"].success,
   color: #34d399;
 }
 
-/* Auth description */
+/* descripción de la página de autenticación */
 .auth-description {
   text-align: center;
   margin-bottom: 1.5rem;
@@ -1366,7 +1366,7 @@ input[type="password"].success,
   margin: 0;
 }
 
-/* Loading spinner */
+/* spinner que gira mientras carga (el circulito) */
 .loading-spinner {
   display: flex;
   flex-direction: column;
@@ -1551,7 +1551,7 @@ input[type="password"].success,
   width: 100%;
 }
 
-/* Responsive Auth */
+/* estilos responsive pa login/registro (móvil y tablet) */
 @media (max-width: 768px) {
   .auth-card {
     padding: 2rem;
@@ -3451,7 +3451,7 @@ input[type="range"]::-moz-range-track {
 
 /* ============ TRANSACTION FORM & LIST STYLES ============ */
 
-/* Transaction Form Container */
+/* contenedor del formulario de transacciones */
 .transaction-form-container {
   background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
   backdrop-filter: blur(10px);
@@ -3462,7 +3462,7 @@ input[type="range"]::-moz-range-track {
   animation: fadeIn 0.3s ease-out;
 }
 
-/* Transaction Form Header */
+/* cabecera del formulario (el titulo) */
 .transaction-form-header {
   display: flex;
   align-items: center;
@@ -3477,14 +3477,14 @@ input[type="range"]::-moz-range-track {
   font-weight: 700;
 }
 
-/* Transaction Form Body */
+/* cuerpo del formulario (donde van los inputs) */
 .transaction-form-body {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
 }
 
-/* Transaction List Container */
+/* contenedor de la lista de transacciones */
 .transaction-list-container {
   background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
   backdrop-filter: blur(10px);
@@ -3495,7 +3495,7 @@ input[type="range"]::-moz-range-track {
   animation: fadeIn 0.3s ease-out;
 }
 
-/* Transaction List Header */
+/* cabecera de la lista de transacciones */
 .transaction-list-header {
   display: flex;
   align-items: center;
@@ -3539,7 +3539,7 @@ input[type="range"]::-moz-range-track {
   transform: translateX(4px);
 }
 
-/* Responsive Adjustments */
+/* ajustes responsive pa móviles */
 @media (max-width: 768px) {
   .transaction-form-container,
   .transaction-list-container {
@@ -3583,7 +3583,7 @@ input[type="range"]::-moz-range-track {
   animation: fadeIn 0.5s ease-out;
 }
 
-/* Page Header Común */
+/* cabecera que se usa en varias páginas */
 .page-header {
   display: flex;
   align-items: center;
@@ -3655,7 +3655,7 @@ input[type="range"]::-moz-range-track {
   color: white;
 }
 
-/* Executive Summary - Resumen Ejecutivo */
+/* resumen ejecutivo (las tarjetas con totales) */
 .executive-summary {
   width: 100%;
   margin-bottom: 1rem;
@@ -3804,7 +3804,7 @@ input[type="range"]::-moz-range-track {
   color: rgba(255, 255, 255, 0.5);
 }
 
-/* Reports Grid */
+/* grilla de reportes (los cuadros con graficos) */
 .reports-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
@@ -3813,7 +3813,7 @@ input[type="range"]::-moz-range-track {
 
 /* .chart-card removed - now using cards.css definition */
 
-/* Categories List */
+/* lista de categorías con barras de progreso */
 .categories-list {
   display: flex;
   flex-direction: column;
@@ -3932,7 +3932,7 @@ input[type="range"]::-moz-range-track {
   font-weight: 500;
 }
 
-/* Trend Chart */
+/* gráfico de tendencia (barras mensuales) */
 .trend-chart {
   display: flex;
   align-items: flex-end;
@@ -4038,7 +4038,7 @@ input[type="range"]::-moz-range-track {
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
 }
 
-/* Info Cards Grid */
+/* grilla de tarjetas informativas */
 .info-cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -4154,7 +4154,7 @@ input[type="range"]::-moz-range-track {
   animation: fadeIn 0.5s ease-out;
 }
 
-/* Analysis Metrics */
+/* métricas de análisis (cards con números importantes) */
 .analysis-metrics {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -4315,7 +4315,7 @@ input[type="range"]::-moz-range-track {
   margin: 0;
 }
 
-/* Insights List */
+/* lista de insights (recomendaciones inteligentes) */
 .insights-list {
   display: flex;
   flex-direction: column;
@@ -4530,7 +4530,7 @@ input[type="range"]::-moz-range-track {
   font-weight: 500;
 }
 
-/* Insight Expanded */
+/* insight expandido (cuando se abre) */
 .insight-expanded {
   margin-top: 1.25rem;
   padding-top: 1.25rem;
@@ -4599,7 +4599,7 @@ input[type="range"]::-moz-range-track {
   color: white;
 }
 
-/* Insight Actions */
+/* botones de acciones del insight */
 .insight-actions {
   display: flex;
   align-items: center;
@@ -4615,7 +4615,7 @@ input[type="range"]::-moz-range-track {
   height: 1rem;
 }
 
-/* Predictive Analysis */
+/* análisis predictivo (proyecciones futuras) */
 .predictive-analysis {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
