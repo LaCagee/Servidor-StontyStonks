@@ -301,8 +301,8 @@ export default function Dashboard() {
                   </div>
 
                   {/* Gráfico de barras profesional */}
-                  <div className="bg-slate-800 bg-opacity-30 rounded-lg p-6 border border-slate-700">
-                    <div className="flex items-end justify-between gap-2 h-64 mb-4">
+                  <div className="bg-slate-800 bg-opacity-40 rounded-lg p-6 border border-slate-600">
+                    <div className="flex items-end justify-between gap-4 h-80 mb-4">
                       {monthlyTrend.map((month, index) => {
                         // Calcular el valor máximo global para escalar correctamente
                         const allValues = monthlyTrend.flatMap(m => [m.income || 0, m.expense || 0]);
@@ -311,23 +311,23 @@ export default function Dashboard() {
                         const incomeValue = month.income || 0;
                         const expenseValue = month.expense || 0;
 
-                        // Calcular porcentajes con altura mínima visible
-                        const incomePercent = maxValue > 0 ? Math.max((incomeValue / maxValue) * 100, 3) : 3;
-                        const expensePercent = maxValue > 0 ? Math.max((expenseValue / maxValue) * 100, 3) : 3;
+                        // Calcular porcentajes con altura mínima más visible (20% en lugar de 3%)
+                        const incomePercent = maxValue > 0 ? Math.max((incomeValue / maxValue) * 100, incomeValue > 0 ? 15 : 3) : 3;
+                        const expensePercent = maxValue > 0 ? Math.max((expenseValue / maxValue) * 100, expenseValue > 0 ? 15 : 3) : 3;
 
                         const hasData = incomeValue > 0 || expenseValue > 0;
 
                         return (
-                          <div key={index} className="flex-1 flex flex-col items-center gap-3 group cursor-pointer">
+                          <div key={index} className="flex-1 flex flex-col items-center gap-3 group cursor-pointer min-w-[60px]">
                             {/* Contenedor de barras */}
-                            <div className="w-full flex items-end justify-center gap-1.5 h-full relative">
+                            <div className="w-full flex items-end justify-center gap-2 h-full relative px-1">
                               {/* Barra de Ingresos */}
                               <div
-                                className="flex-1 bg-gradient-to-t from-green-600 to-green-400 rounded-t-lg hover:from-green-500 hover:to-green-300 transition-all duration-300 shadow-lg relative group/bar"
+                                className="flex-1 max-w-[36px] bg-gradient-to-t from-green-700 via-green-500 to-green-400 rounded-t-lg hover:from-green-600 hover:via-green-400 hover:to-green-300 transition-all duration-300 shadow-xl hover:shadow-2xl relative group/bar ring-1 ring-green-500 ring-opacity-30"
                                 style={{
                                   height: `${incomePercent}%`,
-                                  minHeight: hasData ? '12px' : '4px',
-                                  opacity: hasData ? 1 : 0.3
+                                  minHeight: hasData ? '28px' : '8px',
+                                  opacity: hasData ? 1 : 0.25
                                 }}
                               >
                                 {/* Tooltip hover */}
@@ -341,11 +341,11 @@ export default function Dashboard() {
 
                               {/* Barra de Gastos */}
                               <div
-                                className="flex-1 bg-gradient-to-t from-red-600 to-red-400 rounded-t-lg hover:from-red-500 hover:to-red-300 transition-all duration-300 shadow-lg relative group/bar"
+                                className="flex-1 max-w-[36px] bg-gradient-to-t from-red-700 via-red-500 to-red-400 rounded-t-lg hover:from-red-600 hover:via-red-400 hover:to-red-300 transition-all duration-300 shadow-xl hover:shadow-2xl relative group/bar ring-1 ring-red-500 ring-opacity-30"
                                 style={{
                                   height: `${expensePercent}%`,
-                                  minHeight: hasData ? '12px' : '4px',
-                                  opacity: hasData ? 1 : 0.3
+                                  minHeight: hasData ? '28px' : '8px',
+                                  opacity: hasData ? 1 : 0.25
                                 }}
                               >
                                 {/* Tooltip hover */}
