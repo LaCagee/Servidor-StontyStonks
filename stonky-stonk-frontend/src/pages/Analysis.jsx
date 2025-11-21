@@ -3,7 +3,8 @@ import axios from 'axios';
 import MainLayout from '../components/layout/MainLayout';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import { TrendingUp, AlertTriangle, Lightbulb, Target, ChevronRight, CheckCircle, Clock, Zap } from 'lucide-react';
+import Modal from '../components/ui/Modal';
+import { TrendingUp, AlertTriangle, Lightbulb, Target, ChevronRight, CheckCircle, Clock, Zap, X } from 'lucide-react';
 import { formatCLP } from '../utils/currency';
 
 const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'https://stonky-backend.blackdune-587dd75b.westus3.azurecontainerapps.io'}/api`;
@@ -13,6 +14,11 @@ export default function Analysis() {
   const [loading, setLoading] = useState(true);
   const [balance, setBalance] = useState(0);
   const [expandedInsight, setExpandedInsight] = useState(null);
+  const [actionedInsights, setActionedInsights] = useState(new Set());
+  const [postponedInsights, setPostponedInsights] = useState(new Set());
+  const [dismissedInsights, setDismissedInsights] = useState(new Set());
+  const [showActionModal, setShowActionModal] = useState(false);
+  const [selectedInsight, setSelectedInsight] = useState(null);
 
   const token = localStorage.getItem('token');
   const axiosConfig = {
@@ -53,6 +59,15 @@ export default function Analysis() {
     };
 
     loadInsights();
+
+    // Cargar insights guardados en localStorage
+    const savedActioned = localStorage.getItem('actionedInsights');
+    const savedPostponed = localStorage.getItem('postponedInsights');
+    const savedDismissed = localStorage.getItem('dismissedInsights');
+
+    if (savedActioned) setActionedInsights(new Set(JSON.parse(savedActioned)));
+    if (savedPostponed) setPostponedInsights(new Set(JSON.parse(savedPostponed)));
+    if (savedDismissed) setDismissedInsights(new Set(JSON.parse(savedDismissed)));
   }, []);
 
   const getInsightIcon = (type) => {
@@ -82,9 +97,59 @@ export default function Analysis() {
     }
   };
 
+  // FUNCIONALIDADES DE BOTONES
+  const handleTakeAction = (insight) => {
+    setSelectedInsight(insight);
+    setShowActionModal(true);
+  };
 
-  const totalActionable = insights.filter(i => i.actionable).length;
-  const potentialSavings = insights.reduce((sum, i) => sum + i.amount, 0);
+  const confirmTakeAction = () => {
+    if (selectedInsight) {
+      const newActioned = new Set(actionedInsights);
+      newActioned.add(selectedInsight.id);
+      setActionedInsights(newActioned);
+      localStorage.setItem('actionedInsights', JSON.stringify([...newActioned]));
+
+      // Remover de postponed si estaba ahí
+      const newPostponed = new Set(postponedInsights);
+      newPostponed.delete(selectedInsight.id);
+      setPostponedInsights(newPostponed);
+      localStorage.setItem('postponedInsights', JSON.stringify([...newPostponed]));
+
+      setShowActionModal(false);
+      setSelectedInsight(null);
+    }
+  };
+
+  const handlePostpone = (insightId) => {
+    const newPostponed = new Set(postponedInsights);
+    newPostponed.add(insightId);
+    setPostponedInsights(newPostponed);
+    localStorage.setItem('postponedInsights', JSON.stringify([...newPostponed]));
+
+    // Mostrar feedback al usuario
+    const insight = insights.find(i => i.id === insightId);
+    if (insight) {
+      alert(`Insight "${insight.title}" pospuesto. Lo verás nuevamente mañana.`);
+    }
+  };
+
+  const handleDismiss = (insightId) => {
+    if (window.confirm('¿Estás seguro de que quieres descartar este insight? No lo volverás a ver.')) {
+      const newDismissed = new Set(dismissedInsights);
+      newDismissed.add(insightId);
+      setDismissedInsights(newDismissed);
+      localStorage.setItem('dismissedInsights', JSON.stringify([...newDismissed]));
+    }
+  };
+
+  // Filtrar insights descartados
+  const visibleInsights = insights.filter(i => !dismissedInsights.has(i.id));
+
+  const totalActionable = visibleInsights.filter(i => i.actionable && !actionedInsights.has(i.id)).length;
+  const potentialSavings = visibleInsights
+    .filter(i => !actionedInsights.has(i.id))
+    .reduce((sum, i) => sum + i.amount, 0);
 
   return (
     <MainLayout title="Análisis" balance={balance}>
@@ -106,7 +171,7 @@ export default function Analysis() {
               </div>
               <div className="metric-info">
                 <span className="metric-label">Insights Activos</span>
-                <span className="metric-value">{insights.length}</span>
+                <span className="metric-value">{visibleInsights.length}</span>
                 <span className="metric-description">Recomendaciones para mejorar</span>
               </div>
               <div className="metric-badge">{totalActionable} accionables</div>
@@ -135,7 +200,7 @@ export default function Analysis() {
               <div className="metric-info">
                 <span className="metric-label">Alertas Críticas</span>
                 <span className="metric-value">
-                  {insights.filter(i => i.priority === 'critical').length}
+                  {visibleInsights.filter(i => i.priority === 'critical' && !actionedInsights.has(i.id)).length}
                 </span>
                 <span className="metric-description">Que requieren atención</span>
               </div>
@@ -151,7 +216,7 @@ export default function Analysis() {
               <Zap className="loading-icon" />
               <p>Analizando tus datos financieros...</p>
             </div>
-          ) : insights.length === 0 ? (
+          ) : visibleInsights.length === 0 ? (
             <div className="empty-state">
               <Target className="empty-icon" />
               <h3>No hay insights disponibles</h3>
@@ -159,26 +224,38 @@ export default function Analysis() {
             </div>
           ) : (
             <div className="insights-list">
-              {insights.map((insight, index) => {
+              {visibleInsights.map((insight, index) => {
                 const isExpanded = expandedInsight === insight.id;
                 const priorityBadge = getPriorityBadge(insight.priority);
-                
+                const isActioned = actionedInsights.has(insight.id);
+                const isPostponed = postponedInsights.has(insight.id);
+
                 return (
-                  <div 
-                    key={insight.id} 
-                    className={`insight-item ${getInsightColor(insight.type)} priority-${insight.priority}`}
+                  <div
+                    key={insight.id}
+                    className={`insight-item ${getInsightColor(insight.type)} priority-${insight.priority} ${isActioned ? 'actioned' : ''} ${isPostponed ? 'postponed' : ''}`}
                     style={{ animationDelay: `${index * 0.1}s` }}
                   >
                     <div className="insight-header">
                       <div className="insight-icon-container">
                         <div className="icon-wrapper">
-                          {getInsightIcon(insight.type)}
+                          {isActioned ? <CheckCircle className="insight-icon text-green-500" /> : getInsightIcon(insight.type)}
                         </div>
                       </div>
-                      
+
                       <div className="insight-title">
                         <div className="title-row">
                           <h4>{insight.title}</h4>
+                          {isActioned && (
+                            <span className="text-xs bg-green-500 bg-opacity-20 text-green-400 px-2 py-1 rounded">
+                              Completado
+                            </span>
+                          )}
+                          {isPostponed && (
+                            <span className="text-xs bg-yellow-500 bg-opacity-20 text-yellow-400 px-2 py-1 rounded">
+                              Pospuesto
+                            </span>
+                          )}
                           <div className="priority-badge" data-priority={priorityBadge.color}>
                             {priorityBadge.label}
                           </div>
@@ -187,7 +264,7 @@ export default function Analysis() {
                           Confianza: {(insight.confidence * 100).toFixed(0)}%
                         </span>
                       </div>
-                      
+
                       {insight.amount > 0 && (
                         <div className="insight-amount">
                           <span className="amount-label">Impacto</span>
@@ -195,17 +272,17 @@ export default function Analysis() {
                         </div>
                       )}
 
-                      <button 
+                      <button
                         className="expand-button"
                         onClick={() => setExpandedInsight(isExpanded ? null : insight.id)}
                       >
                         <ChevronRight className={`expand-icon ${isExpanded ? 'expanded' : ''}`} />
                       </button>
                     </div>
-                    
+
                     <div className="insight-content">
                       <p className="insight-message">{insight.message}</p>
-                      
+
                       <div className="insight-meta">
                         <span className="meta-item">
                           <span className="meta-label">Categoría:</span>
@@ -229,14 +306,14 @@ export default function Analysis() {
                           <h5>Recomendación</h5>
                           <p>{insight.recommendation}</p>
                         </div>
-                        
+
                         <div className="expanded-section">
                           <h5>Análisis Detallado</h5>
                           <div className="analysis-grid">
                             <div className="analysis-item">
                               <span className="analysis-label">Confianza</span>
                               <div className="confidence-bar">
-                                <div 
+                                <div
                                   className="confidence-fill"
                                   style={{ width: `${insight.confidence * 100}%` }}
                                 ></div>
@@ -251,18 +328,32 @@ export default function Analysis() {
                         </div>
                       </div>
                     )}
-                    
-                    {insight.actionable && (
+
+                    {insight.actionable && !isActioned && (
                       <div className="insight-actions">
-                        <Button variant="primary" size="sm">
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => handleTakeAction(insight)}
+                        >
                           <CheckCircle className="action-icon" />
                           Tomar Acción
                         </Button>
-                        <Button variant="secondary" size="sm">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handlePostpone(insight.id)}
+                          disabled={isPostponed}
+                        >
                           <Clock className="action-icon" />
-                          Posponer
+                          {isPostponed ? 'Pospuesto' : 'Posponer'}
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDismiss(insight.id)}
+                        >
+                          <X className="action-icon" />
                           Descartar
                         </Button>
                       </div>
@@ -310,7 +401,7 @@ export default function Analysis() {
                   </span>
                 </div>
               </div>
-              
+
               <div className="prediction-item">
                 <div className="prediction-header">
                   <div>
@@ -373,6 +464,81 @@ export default function Analysis() {
           </Card>
         </div>
       </div>
+
+      {/* Modal de Confirmación de Acción */}
+      {showActionModal && selectedInsight && (
+        <Modal
+          title="Tomar Acción"
+          onClose={() => {
+            setShowActionModal(false);
+            setSelectedInsight(null);
+          }}
+        >
+          <div className="space-y-4">
+            <div className="bg-green-500 bg-opacity-10 border border-green-500 border-opacity-20 rounded-lg p-4">
+              <h4 className="text-lg font-semibold text-green-400 mb-2">
+                {selectedInsight.title}
+              </h4>
+              <p className="text-gray-300 text-sm mb-3">
+                {selectedInsight.message}
+              </p>
+              <div className="bg-gray-800 bg-opacity-50 rounded-lg p-3 mt-3">
+                <p className="text-sm text-gray-400 mb-2">
+                  <strong className="text-white">Recomendación:</strong>
+                </p>
+                <p className="text-sm text-gray-300">
+                  {selectedInsight.recommendation}
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-gray-800 bg-opacity-50 rounded-lg p-4">
+              <h5 className="text-sm font-semibold text-white mb-2">Detalles</h5>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Impacto estimado:</span>
+                  <span className="text-green-400 font-medium">
+                    {selectedInsight.amount > 0 ? formatCLP(selectedInsight.amount) : 'Positivo'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Plazo:</span>
+                  <span className="text-white">{selectedInsight.timeframe}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Categoría:</span>
+                  <span className="text-white">{selectedInsight.category}</span>
+                </div>
+              </div>
+            </div>
+
+            <p className="text-sm text-gray-400">
+              Al confirmar, marcarás este insight como completado y se moverá a tu historial de acciones tomadas.
+            </p>
+
+            <div className="flex gap-3 mt-6">
+              <Button
+                variant="primary"
+                full
+                onClick={confirmTakeAction}
+              >
+                <CheckCircle className="icon-sm mr-2" />
+                Confirmar Acción
+              </Button>
+              <Button
+                variant="secondary"
+                full
+                onClick={() => {
+                  setShowActionModal(false);
+                  setSelectedInsight(null);
+                }}
+              >
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </MainLayout>
   );
 }
