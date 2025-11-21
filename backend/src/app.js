@@ -6,6 +6,10 @@ const errorHandler = require('./middlewares/errorHandler');
 
 const app = express();
 
+// ========== TRUST PROXY (Azure Container Apps) ==========
+// Confiar en proxies para obtener la IP real del cliente desde headers
+app.set('trust proxy', true);
+
 // ========== SEGURIDAD ==========
 app.use(helmet());
 
