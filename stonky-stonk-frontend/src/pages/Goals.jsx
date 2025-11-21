@@ -5,7 +5,7 @@ import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import GoalForm from '../components/goals/GoalForm';
 import GoalProgress from '../components/goals/GoalProgress';
-import { Plus, Target, TrendingUp, Pause } from 'lucide-react';
+import { Plus, Target, TrendingUp, Pause, X } from 'lucide-react';
 
 const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'https://stonky-backend.blackdune-587dd75b.westus3.azurecontainerapps.io'}/api`;
 
@@ -280,7 +280,9 @@ export default function Goals() {
         {error && (
           <div className="error-banner">
             <p>{error}</p>
-            <button onClick={() => setError(null)}>✕</button>
+            <button onClick={() => setError(null)}>
+              <X className="w-5 h-5" />
+            </button>
           </div>
         )}
 

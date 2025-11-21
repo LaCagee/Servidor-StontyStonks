@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Edit2, Trash2, Plus, Pause, Play, Check, X } from 'lucide-react';
+import { Edit2, Trash2, Plus, Pause, Play, Check, X, Target, CheckCircle, XCircle, Calendar, AlertTriangle, PartyPopper } from 'lucide-react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import { formatCLP } from '../../utils/currency';
@@ -74,13 +74,33 @@ export default function GoalProgress({
   const getStatusLabel = () => {
     switch (goal.status) {
       case 'completed':
-        return '✓ Completada';
+        return (
+          <span className="flex items-center gap-1">
+            <CheckCircle className="w-3.5 h-3.5" />
+            Completada
+          </span>
+        );
       case 'paused':
-        return '⏸ Pausada';
+        return (
+          <span className="flex items-center gap-1">
+            <Pause className="w-3.5 h-3.5" />
+            Pausada
+          </span>
+        );
       case 'cancelled':
-        return '✕ Cancelada';
+        return (
+          <span className="flex items-center gap-1">
+            <XCircle className="w-3.5 h-3.5" />
+            Cancelada
+          </span>
+        );
       default:
-        return '🎯 Activa';
+        return (
+          <span className="flex items-center gap-1">
+            <Target className="w-3.5 h-3.5" />
+            Activa
+          </span>
+        );
     }
   };
 
@@ -212,9 +232,17 @@ export default function GoalProgress({
             <p className="deadline-label">Fecha límite: {goal.deadline}</p>
             {daysRemaining !== null && (
               <p className={`days-remaining ${isOverdue ? 'overdue' : ''} ${isNearDeadline ? 'warning' : ''}`}>
-                {isOverdue
-                  ? `⚠️ Vencida hace ${Math.abs(daysRemaining)} días`
-                  : `📅 ${daysRemaining} días restantes`}
+                {isOverdue ? (
+                  <span className="flex items-center gap-1">
+                    <AlertTriangle className="w-4 h-4" />
+                    Vencida hace {Math.abs(daysRemaining)} días
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1">
+                    <Calendar className="w-4 h-4" />
+                    {daysRemaining} días restantes
+                  </span>
+                )}
               </p>
             )}
           </div>
@@ -323,13 +351,19 @@ export default function GoalProgress({
 
         {goal.status === 'completed' && (
           <div className="completed-message">
-            <span>🎉 ¡Meta completada!</span>
+            <span className="flex items-center gap-2 justify-center">
+              <CheckCircle className="w-5 h-5" />
+              ¡Meta completada!
+            </span>
           </div>
         )}
 
         {goal.status === 'cancelled' && (
           <div className="cancelled-message">
-            <span>❌ Meta cancelada</span>
+            <span className="flex items-center gap-2 justify-center">
+              <XCircle className="w-5 h-5" />
+              Meta cancelada
+            </span>
           </div>
         )}
       </div>

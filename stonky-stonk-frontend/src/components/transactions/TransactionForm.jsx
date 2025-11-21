@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Lightbulb, AlertCircle } from 'lucide-react';
+import { X, Lightbulb, AlertCircle, TrendingDown, TrendingUp } from 'lucide-react';
 
 const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'https://stonky-backend.blackdune-587dd75b.westus3.azurecontainerapps.io'}/api`;
 
@@ -177,30 +177,42 @@ export default function TransactionForm({ transaction, categories = [], onSave, 
             <button
               type="button"
               onClick={() => handleTypeChange('expense')}
-              className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all ${
+              className={`flex-1 py-3.5 px-4 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
                 formData.type === 'expense'
-                  ? 'bg-red-500 text-white border-2 border-red-400'
-                  : 'bg-slate-700 text-slate-300 border-2 border-slate-600 hover:border-slate-500'
+                  ? 'bg-gradient-to-r from-red-600 to-red-500 text-white border-2 border-red-400 shadow-lg shadow-red-500/50'
+                  : 'bg-slate-700 text-slate-300 border-2 border-slate-600 hover:border-red-400 hover:bg-slate-600'
               }`}
             >
-              💸 Gasto
+              <TrendingDown className="w-5 h-5" />
+              Gasto
             </button>
             <button
               type="button"
               onClick={() => handleTypeChange('income')}
-              className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all ${
+              className={`flex-1 py-3.5 px-4 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
                 formData.type === 'income'
-                  ? 'bg-green-500 text-white border-2 border-green-400'
-                  : 'bg-slate-700 text-slate-300 border-2 border-slate-600 hover:border-slate-500'
+                  ? 'bg-gradient-to-r from-green-600 to-green-500 text-white border-2 border-green-400 shadow-lg shadow-green-500/50'
+                  : 'bg-slate-700 text-slate-300 border-2 border-slate-600 hover:border-green-400 hover:bg-slate-600'
               }`}
             >
-              💰 Ingreso
+              <TrendingUp className="w-5 h-5" />
+              Ingreso
             </button>
           </div>
           <p className={`text-xs mt-2 flex items-center gap-1 ${
             formData.type === 'expense' ? 'text-red-400' : 'text-green-400'
           }`}>
-            {formData.type === 'expense' ? '↓ Registrando un gasto' : '↑ Registrando un ingreso'}
+            {formData.type === 'expense' ? (
+              <>
+                <TrendingDown className="w-3.5 h-3.5" />
+                Registrando un gasto
+              </>
+            ) : (
+              <>
+                <TrendingUp className="w-3.5 h-3.5" />
+                Registrando un ingreso
+              </>
+            )}
           </p>
         </div>
 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import MainLayout from '../components/layout/MainLayout';
 import Card from '../components/ui/Card';
-import { DollarSign, ArrowUpCircle, ArrowDownCircle, Target, TrendingUp, CreditCard } from 'lucide-react';
+import { DollarSign, ArrowUpCircle, ArrowDownCircle, Target, TrendingUp, CreditCard, AlertCircle, RefreshCw } from 'lucide-react';
 import axios from 'axios';
 import { formatCLP, formatPercentage } from '../utils/currency';
 
@@ -157,13 +157,17 @@ export default function Dashboard() {
     return (
       <MainLayout title="Panel Principal" balance={0}>
         <div className="card bg-red-900 bg-opacity-20 border-red-700 p-8 max-w-2xl mx-auto">
-          <h3 className="text-2xl font-bold text-red-400 mb-4">❌ Error de Conexión</h3>
+          <h3 className="text-2xl font-bold text-red-400 mb-4 flex items-center gap-2">
+            <AlertCircle className="w-7 h-7" />
+            Error de Conexión
+          </h3>
           <p className="text-gray-300 mb-6">{error}</p>
-          <button 
-            onClick={loadRealData} 
-            className="btn btn-primary"
+          <button
+            onClick={loadRealData}
+            className="btn btn-primary flex items-center gap-2 justify-center"
           >
-            🔄 Reintentar
+            <RefreshCw className="w-5 h-5" />
+            Reintentar
           </button>
         </div>
       </MainLayout>
@@ -273,54 +277,82 @@ export default function Dashboard() {
           <div className="lg:col-span-2">
             <Card title="Resumen Mensual" className="h-full">
               {monthlyTrend && monthlyTrend.length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <div className="flex flex-col sm:flex-row gap-6">
-                    {/* Gráfico de barras */}
-                    <div className="flex-1 flex items-end justify-around gap-2 h-64">
+                    {/* Gráfico de barras mejorado */}
+                    <div className="flex-1 flex items-end justify-around gap-3 h-72 bg-slate-800 bg-opacity-30 rounded-lg p-4 border border-slate-700">
                       {monthlyTrend.map((month, index) => {
                         const maxValue = Math.max(
                           ...monthlyTrend.map(m => Math.max(m.income || 0, m.expense || 0))
                         );
-                        
+
                         const incomeHeight = maxValue > 0 ? ((month.income || 0) / maxValue) * 100 : 5;
                         const expenseHeight = maxValue > 0 ? ((month.expense || 0) / maxValue) * 100 : 5;
 
                         return (
-                          <div key={index} className="flex-1 flex flex-col items-center gap-1">
-                            <div className="flex gap-1 h-full items-end w-full justify-center">
-                              <div
-                                className="bg-gradient-to-t from-green-500 to-green-400 rounded-t-sm w-4"
-                                style={{ height: `${incomeHeight}%` }}
-                              />
-                              <div
-                                className="bg-gradient-to-t from-red-500 to-red-400 rounded-t-sm w-4"
-                                style={{ height: `${expenseHeight}%` }}
-                              />
+                          <div key={index} className="flex-1 flex flex-col items-center gap-2 group">
+                            <div className="flex gap-1.5 h-full items-end w-full justify-center relative">
+                              {/* Barra de Ingresos */}
+                              <div className="relative flex-1 max-w-[24px]">
+                                <div
+                                  className="bg-gradient-to-t from-green-600 to-green-400 rounded-t-md w-full transition-all duration-300 group-hover:from-green-500 group-hover:to-green-300 shadow-lg"
+                                  style={{
+                                    height: `${Math.max(incomeHeight, 8)}%`,
+                                    minHeight: '8px'
+                                  }}
+                                  title={`Ingresos: ${formatCLP(month.income || 0)}`}
+                                />
+                              </div>
+                              {/* Barra de Gastos */}
+                              <div className="relative flex-1 max-w-[24px]">
+                                <div
+                                  className="bg-gradient-to-t from-red-600 to-red-400 rounded-t-md w-full transition-all duration-300 group-hover:from-red-500 group-hover:to-red-300 shadow-lg"
+                                  style={{
+                                    height: `${Math.max(expenseHeight, 8)}%`,
+                                    minHeight: '8px'
+                                  }}
+                                  title={`Gastos: ${formatCLP(month.expense || 0)}`}
+                                />
+                              </div>
                             </div>
-                            <p className="text-xs text-gray-400 mt-2 text-center">
+                            <p className="text-xs text-gray-400 mt-2 text-center font-medium uppercase tracking-wide">
                               {new Date(month.month).toLocaleDateString('es-CL', { month: 'short' })}
                             </p>
+                            {/* Tooltip con valores */}
+                            <div className="hidden group-hover:flex flex-col gap-1 text-xs absolute bg-slate-900 border border-slate-600 rounded-lg p-2 shadow-xl z-10 -translate-y-full -mt-2">
+                              <div className="text-green-400 font-semibold whitespace-nowrap">
+                                ↑ {formatCLP(month.income || 0)}
+                              </div>
+                              <div className="text-red-400 font-semibold whitespace-nowrap">
+                                ↓ {formatCLP(month.expense || 0)}
+                              </div>
+                              <div className="text-gray-300 font-semibold border-t border-slate-700 pt-1 whitespace-nowrap">
+                                = {formatCLP((month.income || 0) - (month.expense || 0))}
+                              </div>
+                            </div>
                           </div>
                         );
                       })}
                     </div>
 
-                    {/* Leyenda */}
+                    {/* Leyenda mejorada */}
                     <div className="flex flex-row sm:flex-col gap-4 sm:gap-6 justify-center sm:justify-start">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-gradient-to-br from-green-500 to-green-400 rounded"></div>
-                        <span className="text-sm text-gray-300">Ingresos</span>
+                      <div className="flex items-center gap-3 bg-green-500 bg-opacity-10 px-4 py-2 rounded-lg border border-green-500 border-opacity-20">
+                        <div className="w-4 h-4 bg-gradient-to-br from-green-600 to-green-400 rounded shadow-md"></div>
+                        <span className="text-sm text-green-400 font-semibold">Ingresos</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-gradient-to-br from-red-500 to-red-400 rounded"></div>
-                        <span className="text-sm text-gray-300">Gastos</span>
+                      <div className="flex items-center gap-3 bg-red-500 bg-opacity-10 px-4 py-2 rounded-lg border border-red-500 border-opacity-20">
+                        <div className="w-4 h-4 bg-gradient-to-br from-red-600 to-red-400 rounded shadow-md"></div>
+                        <span className="text-sm text-red-400 font-semibold">Gastos</span>
                       </div>
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-12">
-                  <p className="text-gray-400">No hay datos de tendencia mensual disponibles</p>
+                <div className="text-center py-12 bg-slate-800 bg-opacity-30 rounded-lg border border-slate-700">
+                  <TrendingUp className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+                  <p className="text-gray-400 text-lg font-medium">No hay datos de tendencia mensual disponibles</p>
+                  <p className="text-gray-500 text-sm mt-2">Comienza agregando transacciones para ver tu resumen</p>
                 </div>
               )}
             </Card>
