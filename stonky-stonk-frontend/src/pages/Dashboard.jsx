@@ -316,7 +316,7 @@ export default function Dashboard() {
                               </div>
                             </div>
                             <p className="text-xs text-gray-400 mt-2 text-center font-medium uppercase tracking-wide">
-                              {new Date(month.month).toLocaleDateString('es-CL', { month: 'short' })}
+                              {month.monthName ? month.monthName.substring(0, 3) : 'N/A'}
                             </p>
                             {/* Tooltip con valores */}
                             <div className="hidden group-hover:flex flex-col gap-1 text-xs absolute bg-slate-900 border border-slate-600 rounded-lg p-2 shadow-xl z-10 -translate-y-full -mt-2">
