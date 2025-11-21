@@ -1,21 +1,27 @@
+// aca traemos las cosas de react que necesitamos
 import { useState, useEffect } from 'react';
 import MainLayout from '../components/layout/MainLayout';
 import Card from '../components/ui/Card';
+// estos son los iconos que usamos pa que se vea bonito
 import { DollarSign, ArrowUpCircle, ArrowDownCircle, Target, TrendingUp, CreditCard, AlertCircle, RefreshCw } from 'lucide-react';
 import axios from 'axios';
+// esto es pa formatear la plata en pesos chilenos
 import { formatCLP, formatPercentage } from '../utils/currency';
 
 export default function Dashboard() {
-  const [transactions, setTransactions] = useState([]);
-  const [dashboardData, setDashboardData] = useState(null);
-  const [monthlyTrend, setMonthlyTrend] = useState([]);
-  const [goals, setGoals] = useState([]);
-  const [previousMonthData, setPreviousMonthData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  // aca guardamos toda la info que necesitamos mostrar
+  const [transactions, setTransactions] = useState([]); // las transacciones del usuario
+  const [dashboardData, setDashboardData] = useState(null); // info general del dashboard
+  const [monthlyTrend, setMonthlyTrend] = useState([]); // datos de los últimos 6 meses
+  const [goals, setGoals] = useState([]); // las metas que tiene el usuario
+  const [previousMonthData, setPreviousMonthData] = useState(null); // datos del mes pasado pa comparar
+  const [loading, setLoading] = useState(true); // pa mostrar el spinner mientras carga
+  const [error, setError] = useState(null); // pa cuando algo sale mal jaja
 
+  // la URL del backend, si no hay variable de entorno usa la de azure
   const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'https://stonky-backend.blackdune-587dd75b.westus3.azurecontainerapps.io'}/api`;
 
+  // esta funcion agarra el token pa autenticarnos con el backend
   const getAuthHeaders = () => {
     const token = localStorage.getItem('token');
     return {
@@ -24,9 +30,10 @@ export default function Dashboard() {
     };
   };
 
+  // funcion reutilizable pa hacer fetch al backend (pa no repetir codigo)
   const apiFetch = async (endpoint) => {
     const url = `${API_BASE_URL}${endpoint}`;
-    
+
     try {
       const response = await fetch(url, {
         headers: getAuthHeaders()
@@ -44,16 +51,19 @@ export default function Dashboard() {
     }
   };
 
+  // calcula cuanto cambió algo comparado con el mes anterior (en porcentaje)
   const calculateMonthComparison = (current, previous) => {
-    if (!previous || previous === 0) return 0;
-    return (((current - previous) / previous) * 100).toFixed(1);
+    if (!previous || previous === 0) return 0; // si no hay dato anterior, retorna 0
+    return (((current - previous) / previous) * 100).toFixed(1); // formula del porcentaje
   };
 
+  // esta funcion carga todos los datos del dashboard desde el backend
   const loadRealData = async () => {
     try {
-      setLoading(true);
-      setError(null);
+      setLoading(true); // mostramos el spinner
+      setError(null); // limpiamos cualquier error anterior
 
+      // verificamos que el usuario esté logueado
       const token = localStorage.getItem('token');
       if (!token) {
         throw new Error('No hay token de autenticación. Por favor, inicia sesión primero.');
@@ -61,23 +71,24 @@ export default function Dashboard() {
 
       console.log('🚀 Iniciando carga de datos del dashboard...');
 
-      // Cargar todos los datos en paralelo
+      // aca traemos todos los datos al mismo tiempo pa que sea mas rapido (Promise.all es la clave)
       const [dashboardResult, transactionsResult, monthlyTrendResult, goalsResult] = await Promise.all([
-        apiFetch('/dashboard/overview'),
-        apiFetch('/transactions?page=1&limit=5&sort=date:desc'),
-        apiFetch('/dashboard/monthly-trend?months=6'),
-        apiFetch('/goals')
+        apiFetch('/dashboard/overview'), // resumen general
+        apiFetch('/transactions?page=1&limit=5&sort=date:desc'), // últimas 5 transacciones
+        apiFetch('/dashboard/monthly-trend?months=6'), // datos de los últimos 6 meses
+        apiFetch('/goals') // todas las metas
       ]);
 
+      // guardamos los datos en los states
       setDashboardData(dashboardResult.overview);
       setTransactions(transactionsResult.transactions || []);
       setMonthlyTrend(monthlyTrendResult.trend || []);
-      
-      // Filtrar y contar metas activas
+
+      // filtramos solo las metas que están activas (no las completadas ni canceladas)
       const activeGoals = (goalsResult.goals || []).filter(g => g.status === 'active');
       setGoals(activeGoals);
 
-      // Calcular progreso promedio de metas activas
+      // calculamos el promedio de progreso de todas las metas activas
       const avgProgress = activeGoals.length > 0
         ? (activeGoals.reduce((acc, g) => acc + (g.progress?.percentage || 0), 0) / activeGoals.length).toFixed(0)
         : 0;
@@ -300,37 +311,38 @@ export default function Dashboard() {
                     </div>
                   </div>
 
-                  {/* Gráfico de barras profesional */}
+                  {/* aca va el gráfico de barras que se ve re piola */}
                   <div className="bg-slate-800 bg-opacity-40 rounded-lg p-6 border border-slate-600">
                     <div className="flex items-end justify-between gap-4 h-80 mb-4">
                       {monthlyTrend.map((month, index) => {
-                        // Calcular el valor máximo global para escalar correctamente
+                        // primero sacamos el valor mas grande de todos los meses pa escalar bien las barras
                         const allValues = monthlyTrend.flatMap(m => [m.income || 0, m.expense || 0]);
-                        const maxValue = Math.max(...allValues, 1); // Mínimo 1 para evitar división por cero
+                        const maxValue = Math.max(...allValues, 1); // minimo 1 pa no dividir por cero (sino explota jaja)
 
                         const incomeValue = month.income || 0;
                         const expenseValue = month.expense || 0;
 
-                        // Calcular porcentajes con altura mínima más visible (20% en lugar de 3%)
+                        // calculamos el porcentaje de altura de cada barra
+                        // si tiene datos le ponemos minimo 15% pa que se vea, sino 3%
                         const incomePercent = maxValue > 0 ? Math.max((incomeValue / maxValue) * 100, incomeValue > 0 ? 15 : 3) : 3;
                         const expensePercent = maxValue > 0 ? Math.max((expenseValue / maxValue) * 100, expenseValue > 0 ? 15 : 3) : 3;
 
-                        const hasData = incomeValue > 0 || expenseValue > 0;
+                        const hasData = incomeValue > 0 || expenseValue > 0; // pa saber si hay datos o no
 
                         return (
                           <div key={index} className="flex-1 flex flex-col items-center gap-3 group cursor-pointer min-w-[60px]">
-                            {/* Contenedor de barras */}
+                            {/* aca van las dos barritas (ingresos y gastos) */}
                             <div className="w-full flex items-end justify-center gap-2 h-full relative px-1">
-                              {/* Barra de Ingresos */}
+                              {/* Barra verde = ingresos (la buena jaja) */}
                               <div
                                 className="flex-1 max-w-[36px] bg-gradient-to-t from-green-700 via-green-500 to-green-400 rounded-t-lg hover:from-green-600 hover:via-green-400 hover:to-green-300 transition-all duration-300 shadow-xl hover:shadow-2xl relative group/bar ring-1 ring-green-500 ring-opacity-30"
                                 style={{
                                   height: `${incomePercent}%`,
-                                  minHeight: hasData ? '28px' : '8px',
-                                  opacity: hasData ? 1 : 0.25
+                                  minHeight: hasData ? '28px' : '8px', // minimo 28px si tiene datos
+                                  opacity: hasData ? 1 : 0.25 // si no hay datos se ve transparente
                                 }}
                               >
-                                {/* Tooltip hover */}
+                                {/* este tooltip aparece cuando pasas el mouse por encima */}
                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/bar:block z-20">
                                   <div className="bg-slate-900 border border-green-500 rounded-lg px-3 py-2 text-xs whitespace-nowrap shadow-xl">
                                     <p className="text-green-400 font-semibold">Ingresos</p>
@@ -339,7 +351,7 @@ export default function Dashboard() {
                                 </div>
                               </div>
 
-                              {/* Barra de Gastos */}
+                              {/* Barra roja = gastos (la mala :( ) */}
                               <div
                                 className="flex-1 max-w-[36px] bg-gradient-to-t from-red-700 via-red-500 to-red-400 rounded-t-lg hover:from-red-600 hover:via-red-400 hover:to-red-300 transition-all duration-300 shadow-xl hover:shadow-2xl relative group/bar ring-1 ring-red-500 ring-opacity-30"
                                 style={{
@@ -348,7 +360,7 @@ export default function Dashboard() {
                                   opacity: hasData ? 1 : 0.25
                                 }}
                               >
-                                {/* Tooltip hover */}
+                                {/* tooltip igual que el de arriba pero pa gastos */}
                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/bar:block z-20">
                                   <div className="bg-slate-900 border border-red-500 rounded-lg px-3 py-2 text-xs whitespace-nowrap shadow-xl">
                                     <p className="text-red-400 font-semibold">Gastos</p>
@@ -358,7 +370,7 @@ export default function Dashboard() {
                               </div>
                             </div>
 
-                            {/* Etiqueta del mes */}
+                            {/* aca va el nombre del mes abajo de las barras */}
                             <div className="text-center">
                               <p className="text-xs font-semibold text-gray-300 uppercase tracking-wider">
                                 {month.monthName ? month.monthName.substring(0, 3) : 'N/A'}
