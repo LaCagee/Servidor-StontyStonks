@@ -5,11 +5,12 @@ import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
+import IncomeTrendChart from '../components/charts/IncomeTrendChart';
 import { Download, Filter, Calendar, BarChart3, TrendingUp, PieChart, ArrowUpRight, ArrowDownLeft, X, DollarSign } from 'lucide-react';
 import { formatCLP } from '../utils/currency'; // mantener pa retrocompatibilidad
 import { useSettings } from '../context/SettingsContext'; // pa usar moneda del usuario
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'https://stonky-backend.blackdune-587dd75b.westus3.azurecontainerapps.io'}/api`;
 
@@ -91,6 +92,8 @@ export default function Reports() {
         console.log('📄 Generando PDF...');
         const doc = new jsPDF();
 
+        // jspdf-autotable se agrega automáticamente al doc
+
         // Título del reporte
         doc.setFontSize(20);
         doc.text('Stonky Stonks - Reporte Financiero', 14, 20);
@@ -134,7 +137,7 @@ export default function Reports() {
           `${cat.percentage}%`
         ]) || [];
 
-        doc.autoTable({
+        autoTable(doc, {
           startY: yPos,
           head: [['Categoría', 'Monto', 'Porcentaje']],
           body: categoryData,
@@ -162,7 +165,7 @@ export default function Reports() {
           formatMoney(month.savings)
         ]) || [];
 
-        doc.autoTable({
+        autoTable(doc, {
           startY: yPos,
           head: [['Mes', 'Ingresos', 'Gastos', 'Ahorro']],
           body: trendData,
@@ -497,40 +500,9 @@ export default function Reports() {
                 </div>
               </Card>
 
-              {/* Tendencia Mensual Mejorada */}
+              {/* Tendencia Mensual con Recharts */}
               <Card title="Tendencia de Ingresos vs Gastos" className="chart-card">
-                <div className="trend-chart">
-                  {reportData.monthlyTrend.map((month, index) => (
-                    <div key={index} className="trend-item">
-                      <span className="month-label">{month.month}</span>
-                      <div className="trend-bars">
-                        <div
-                          className="trend-bar income"
-                          style={{ height: `${(month.income / 500000) * 100}%` }}
-                          title={`Ingresos: ${formatMoney(month.income)}`}
-                        ></div>
-                        <div
-                          className="trend-bar expense"
-                          style={{ height: `${(month.expenses / 500000) * 100}%` }}
-                          title={`Gastos: ${formatMoney(month.expenses)}`}
-                        ></div>
-                      </div>
-                      <div className="month-details">
-                        <span className="savings-badge">${(month.savings / 1000).toFixed(0)}k</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="chart-legend">
-                  <div className="legend-item">
-                    <div className="legend-color income"></div>
-                    <span>Ingresos</span>
-                  </div>
-                  <div className="legend-item">
-                    <div className="legend-color expense"></div>
-                    <span>Gastos</span>
-                  </div>
-                </div>
+                <IncomeTrendChart data={reportData.monthlyTrend} />
               </Card>
             </div>
 
