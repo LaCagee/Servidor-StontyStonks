@@ -4,10 +4,10 @@
 const express = require('express');
 const router = express.Router();
 const settingsController = require('../controllers/settingsController');
-const { authenticate } = require('../middlewares/auth');
+const authMiddleware = require('../middlewares/authMiddleware'); 
 
 // todas las rutas de settings requieren autenticación
-router.use(authenticate);
+router.use(authMiddleware); 
 
 // GET /api/settings - Obtener configuraciones del usuario
 router.get('/', settingsController.getSettings);

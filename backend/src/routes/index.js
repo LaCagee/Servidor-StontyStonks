@@ -15,11 +15,11 @@ const transactionRoutes = require('./transactionRoutes');
 const categoryRoutes = require('./categoryRoutes');
 const dashboardRoutes = require('./dashboardRoutes');
 const suggestionRoutes = require('./SuggestionRoutes');
-const goalRoutes = require('./goalRoutes');  // ← NUEVO
+const goalRoutes = require('./goalRoutes');  
 const budgetRoutes = require('./Budgetroutes');
-const analysisRoutes = require('./analysisRoutes');  // ← NUEVO
-const reportsRoutes = require('./reportsRoutes');  // ← NUEVO
-const settingsRoutes = require('./settings');  // ← NUEVO
+const analysisRoutes = require('./analysisRoutes');  
+const reportsRoutes = require('./reportsRoutes');  
+const settingsRoutes = require('./settingsRoutes');  
 
 
 // Usar rutas
@@ -29,11 +29,11 @@ router.use('/transactions', transactionRoutes);
 router.use('/categories', categoryRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/suggestions', suggestionRoutes);
-router.use('/goals', goalRoutes);  // ← NUEVO
+router.use('/goals', goalRoutes);  
 router.use('/budgets', budgetRoutes);
-router.use('/analysis', analysisRoutes);  // ← NUEVO
-router.use('/reports', reportsRoutes);  // ← NUEVO
-router.use('/settings', settingsRoutes);  // ← NUEVO
+router.use('/analysis', analysisRoutes);  
+router.use('/reports', reportsRoutes);  
+router.use('/settings', settingsRoutes);  
 
 // Ruta de prueba
 router.get('/', (req, res) => {
@@ -50,7 +50,7 @@ router.get('/', (req, res) => {
       budgets: '/api/budgets',
       analysis: '/api/analysis',
       reports: '/api/reports',
-      settings: '/api/settings'  // ← NUEVO
+      settings: '/api/settings'  
     }
   });
 });
