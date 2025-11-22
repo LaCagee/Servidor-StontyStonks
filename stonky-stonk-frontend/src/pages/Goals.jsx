@@ -5,7 +5,8 @@ import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import GoalForm from '../components/goals/GoalForm';
 import GoalProgress from '../components/goals/GoalProgress';
-import { Plus, Target, TrendingUp, Pause, X } from 'lucide-react';
+import { Plus, Target, TrendingUp, Pause, X, CheckCircle, DollarSign, Zap } from 'lucide-react';
+import { formatCLP } from '../utils/currency';
 
 const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'https://stonky-backend.blackdune-587dd75b.westus3.azurecontainerapps.io'}/api`;
 
@@ -262,12 +263,17 @@ export default function Goals() {
   const activeGoals = goals.filter(goal => goal.status === 'active');
   const pausedGoals = goals.filter(goal => goal.status === 'paused');
 
+  // Calcular estadísticas
+  const totalSaved = goals.reduce((sum, goal) => sum + (goal.progress?.currentAmount || 0), 0);
+  const totalTarget = activeGoals.reduce((sum, goal) => sum + (goal.targetAmount || 0), 0);
+  const completionRate = goals.length > 0 ? ((completedGoals.length / goals.length) * 100).toFixed(1) : 0;
+
   if (loading) {
     return (
       <MainLayout title="Metas de Ahorro" balance={balance}>
-        <div className="loading-screen">
-          <div className="loading-spinner"></div>
-          <p>Cargando tus metas...</p>
+        <div className="loading-state">
+          <Zap className="loading-icon" />
+          <p>Cargando tus metas de ahorro...</p>
         </div>
       </MainLayout>
     );
@@ -298,35 +304,47 @@ export default function Goals() {
           </Button>
         </div>
 
-        {/* Estadísticas */}
-        <div className="stats-grid">
-          <Card variant="stonky-primary" className="stat-card-large">
-            <div className="stat-content">
-              <Target className="stat-icon" />
-              <div className="stat-info">
-                <span className="stat-label">Metas Activas</span>
-                <span className="stat-value">{activeGoals.length}</span>
+        {/* Métricas Principales Mejoradas */}
+        <div className="analysis-metrics">
+          <Card variant="stonky-primary" className="metric-card metric-card-primary">
+            <div className="metric-content">
+              <div className="metric-icon-container">
+                <Target className="metric-icon" />
               </div>
+              <div className="metric-info">
+                <span className="metric-label">Metas Activas</span>
+                <span className="metric-value">{activeGoals.length}</span>
+                <span className="metric-description">En progreso ahora</span>
+              </div>
+              <div className="metric-badge">{totalTarget > 0 ? formatCLP(totalTarget) : 'Sin objetivos'}</div>
             </div>
           </Card>
 
-          <Card variant="stonky-success" className="stat-card-large">
-            <div className="stat-content">
-              <TrendingUp className="stat-icon" />
-              <div className="stat-info">
-                <span className="stat-label">Completadas</span>
-                <span className="stat-value">{completedGoals.length}</span>
+          <Card variant="stonky-success" className="metric-card metric-card-success">
+            <div className="metric-content">
+              <div className="metric-icon-container">
+                <DollarSign className="metric-icon" />
               </div>
+              <div className="metric-info">
+                <span className="metric-label">Total Ahorrado</span>
+                <span className="metric-value">{formatCLP(totalSaved)}</span>
+                <span className="metric-description">Progreso acumulado</span>
+              </div>
+              <div className="metric-badge">{completedGoals.length} completadas</div>
             </div>
           </Card>
 
-          <Card variant="stonky-info" className="stat-card-large">
-            <div className="stat-content">
-              <Pause className="stat-icon" />
-              <div className="stat-info">
-                <span className="stat-label">Pausadas</span>
-                <span className="stat-value">{pausedGoals.length}</span>
+          <Card variant="stonky-warning" className="metric-card metric-card-warning">
+            <div className="metric-content">
+              <div className="metric-icon-container">
+                <CheckCircle className="metric-icon" />
               </div>
+              <div className="metric-info">
+                <span className="metric-label">Tasa de Éxito</span>
+                <span className="metric-value">{completionRate}%</span>
+                <span className="metric-description">Metas completadas</span>
+              </div>
+              <div className="metric-badge">{pausedGoals.length} pausadas</div>
             </div>
           </Card>
         </div>
