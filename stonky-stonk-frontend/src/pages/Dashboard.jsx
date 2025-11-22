@@ -2,8 +2,9 @@
 import { useState, useEffect } from 'react';
 import MainLayout from '../components/layout/MainLayout';
 import Card from '../components/ui/Card';
+import ExpensesPieChart from '../components/charts/ExpensesPieChart';
 // estos son los iconos que usamos pa que se vea bonito
-import { DollarSign, ArrowUpCircle, ArrowDownCircle, Target, TrendingUp, CreditCard, AlertCircle, RefreshCw } from 'lucide-react';
+import { DollarSign, ArrowUpCircle, ArrowDownCircle, Target, TrendingUp, CreditCard, AlertCircle, RefreshCw, PieChart } from 'lucide-react';
 import axios from 'axios';
 // esto es pa formatear la plata con la moneda del usuario
 import { formatCLP, formatPercentage } from '../utils/currency'; // mantener pa retrocompatibilidad
@@ -17,6 +18,7 @@ export default function Dashboard() {
   const [transactions, setTransactions] = useState([]); // las transacciones del usuario
   const [dashboardData, setDashboardData] = useState(null); // info general del dashboard
   const [monthlyTrend, setMonthlyTrend] = useState([]); // datos de los últimos 6 meses
+  const [expensesByCategory, setExpensesByCategory] = useState([]); // gastos por categoría pa el gráfico pastel
   const [goals, setGoals] = useState([]); // las metas que tiene el usuario
   const [previousMonthData, setPreviousMonthData] = useState(null); // datos del mes pasado pa comparar
   const [loading, setLoading] = useState(true); // pa mostrar el spinner mientras carga
@@ -75,18 +77,25 @@ export default function Dashboard() {
 
       console.log('🚀 Iniciando carga de datos del dashboard...');
 
+      // calcular fechas del mes actual pa el gráfico pastel
+      const now = new Date();
+      const startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+      const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+
       // aca traemos todos los datos al mismo tiempo pa que sea mas rapido (Promise.all es la clave)
-      const [dashboardResult, transactionsResult, monthlyTrendResult, goalsResult] = await Promise.all([
+      const [dashboardResult, transactionsResult, monthlyTrendResult, goalsResult, categoryResult] = await Promise.all([
         apiFetch('/dashboard/overview'), // resumen general
         apiFetch('/transactions?page=1&limit=5&sort=date:desc'), // últimas 5 transacciones
         apiFetch('/dashboard/monthly-trend?months=6'), // datos de los últimos 6 meses
-        apiFetch('/goals') // todas las metas
+        apiFetch('/goals'), // todas las metas
+        apiFetch(`/dashboard/by-category?startDate=${startDate}&endDate=${endDate}`) // gastos por categoría del mes actual
       ]);
 
       // guardamos los datos en los states
       setDashboardData(dashboardResult.overview);
       setTransactions(transactionsResult.transactions || []);
       setMonthlyTrend(monthlyTrendResult.trend || []);
+      setExpensesByCategory(categoryResult.categories || []);
 
       // filtramos solo las metas que están activas (no las completadas ni canceladas)
       const activeGoals = (goalsResult.goals || []).filter(g => g.status === 'active');
@@ -286,11 +295,18 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Gráfico Pastel de Gastos por Categoría */}
+        {expensesByCategory && expensesByCategory.length > 0 && (
+          <Card title="Gastos por Categoría (Este Mes)" icon={<PieChart className="card-icon" />}>
+            <ExpensesPieChart data={expensesByCategory} />
+          </Card>
+        )}
+
         {/* Sección de Contenido - Gráfico y Transacciones */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Gráfico de Resumen Mensual - Ocupa 2 columnas en desktop */}
           <div className="lg:col-span-2">
-            <Card title="Resumen Mensual" className="h-full">
+            <Card title="Tendencia Mensual (Últimos 6 Meses)" className="h-full">
               {monthlyTrend && monthlyTrend.length > 0 ? (
                 <div className="space-y-4">
                   {/* Indicadores de totales */}

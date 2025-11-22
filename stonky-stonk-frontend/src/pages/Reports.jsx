@@ -81,98 +81,105 @@ export default function Reports() {
 
   // EXPORTAR A PDF (ahora usa la moneda del usuario)
   const handleExportReport = async (format) => {
-    if (!reportData) {
-      alert('No hay datos de reporte disponibles para exportar');
-      return;
-    }
-
-    if (format === 'pdf') {
-      const doc = new jsPDF();
-
-      // Título del reporte
-      doc.setFontSize(20);
-      doc.text('Stonky Stonks - Reporte Financiero', 14, 20);
-
-      doc.setFontSize(10);
-      doc.text(`Período: ${reportData.period?.startDate || 'N/A'} - ${reportData.period?.endDate || 'N/A'}`, 14, 30);
-      doc.text(`Generado: ${new Date().toLocaleDateString('es-CL')}`, 14, 35);
-      doc.text(`Moneda: ${currency}`, 14, 40); // mostrar la moneda usada
-
-      // Línea separadora
-      doc.setLineWidth(0.5);
-      doc.line(14, 45, 196, 45);
-
-      // Resumen Ejecutivo
-      doc.setFontSize(14);
-      doc.text('Resumen Ejecutivo', 14, 55);
-
-      doc.setFontSize(10);
-      let yPos = 65;
-      doc.text(`Ingresos Totales: ${formatMoney(reportData.summary?.totalIncome || 0)}`, 14, yPos);
-      yPos += 7;
-      doc.text(`Gastos Totales: ${formatMoney(reportData.summary?.totalExpenses || 0)}`, 14, yPos);
-      yPos += 7;
-      doc.text(`Ahorro Neto: ${formatMoney(reportData.summary?.netSavings || 0)}`, 14, yPos);
-      yPos += 7;
-      doc.text(`Tasa de Ahorro: ${reportData.summary?.savingsRate || 0}%`, 14, yPos);
-      yPos += 7;
-      doc.text(`Crecimiento Ingresos: ${reportData.summary?.incomeGrowth || 0}%`, 14, yPos);
-      yPos += 7;
-      doc.text(`Crecimiento Gastos: ${reportData.summary?.expenseGrowth || 0}%`, 14, yPos);
-
-      // Gastos por Categoría (Tabla)
-      yPos += 15;
-      doc.setFontSize(14);
-      doc.text('Distribución de Gastos por Categoría', 14, yPos);
-      yPos += 5;
-
-      const categoryData = reportData.expensesByCategory?.map(cat => [
-        cat.category,
-        formatMoney(cat.amount),
-        `${cat.percentage}%`
-      ]) || [];
-
-      doc.autoTable({
-        startY: yPos,
-        head: [['Categoría', 'Monto', 'Porcentaje']],
-        body: categoryData,
-        theme: 'grid',
-        headStyles: { fillColor: [52, 211, 153] },
-        styles: { fontSize: 9 }
-      });
-
-      // Tendencia Mensual
-      yPos = doc.lastAutoTable.finalY + 15;
-
-      if (yPos > 250) {
-        doc.addPage();
-        yPos = 20;
+    try {
+      if (!reportData) {
+        alert('No hay datos de reporte disponibles para exportar');
+        return;
       }
 
-      doc.setFontSize(14);
-      doc.text('Tendencia Mensual', 14, yPos);
-      yPos += 5;
+      if (format === 'pdf') {
+        console.log('📄 Generando PDF...');
+        const doc = new jsPDF();
 
-      const trendData = reportData.monthlyTrend?.map(month => [
-        month.month,
-        formatMoney(month.income),
-        formatMoney(month.expenses),
-        formatMoney(month.savings)
-      ]) || [];
+        // Título del reporte
+        doc.setFontSize(20);
+        doc.text('Stonky Stonks - Reporte Financiero', 14, 20);
 
-      doc.autoTable({
-        startY: yPos,
-        head: [['Mes', 'Ingresos', 'Gastos', 'Ahorro']],
-        body: trendData,
-        theme: 'grid',
-        headStyles: { fillColor: [52, 211, 153] },
-        styles: { fontSize: 9 }
-      });
+        doc.setFontSize(10);
+        doc.text(`Período: ${reportData.period?.startDate || 'N/A'} - ${reportData.period?.endDate || 'N/A'}`, 14, 30);
+        doc.text(`Generado: ${new Date().toLocaleDateString('es-CL')}`, 14, 35);
+        doc.text(`Moneda: ${currency}`, 14, 40); // mostrar la moneda usada
 
-      // Guardar PDF
-      doc.save(`reporte-stonky-${new Date().toISOString().split('T')[0]}.pdf`);
+        // Línea separadora
+        doc.setLineWidth(0.5);
+        doc.line(14, 45, 196, 45);
 
-      alert(`✅ Reporte PDF generado exitosamente en ${currency}`);
+        // Resumen Ejecutivo
+        doc.setFontSize(14);
+        doc.text('Resumen Ejecutivo', 14, 55);
+
+        doc.setFontSize(10);
+        let yPos = 65;
+        doc.text(`Ingresos Totales: ${formatMoney(reportData.summary?.totalIncome || 0)}`, 14, yPos);
+        yPos += 7;
+        doc.text(`Gastos Totales: ${formatMoney(reportData.summary?.totalExpenses || 0)}`, 14, yPos);
+        yPos += 7;
+        doc.text(`Ahorro Neto: ${formatMoney(reportData.summary?.netSavings || 0)}`, 14, yPos);
+        yPos += 7;
+        doc.text(`Tasa de Ahorro: ${reportData.summary?.savingsRate || 0}%`, 14, yPos);
+        yPos += 7;
+        doc.text(`Crecimiento Ingresos: ${reportData.summary?.incomeGrowth || 0}%`, 14, yPos);
+        yPos += 7;
+        doc.text(`Crecimiento Gastos: ${reportData.summary?.expenseGrowth || 0}%`, 14, yPos);
+
+        // Gastos por Categoría (Tabla)
+        yPos += 15;
+        doc.setFontSize(14);
+        doc.text('Distribución de Gastos por Categoría', 14, yPos);
+        yPos += 5;
+
+        const categoryData = reportData.expensesByCategory?.map(cat => [
+          cat.category,
+          formatMoney(cat.amount),
+          `${cat.percentage}%`
+        ]) || [];
+
+        doc.autoTable({
+          startY: yPos,
+          head: [['Categoría', 'Monto', 'Porcentaje']],
+          body: categoryData,
+          theme: 'grid',
+          headStyles: { fillColor: [52, 211, 153] },
+          styles: { fontSize: 9 }
+        });
+
+        // Tendencia Mensual
+        yPos = doc.lastAutoTable.finalY + 15;
+
+        if (yPos > 250) {
+          doc.addPage();
+          yPos = 20;
+        }
+
+        doc.setFontSize(14);
+        doc.text('Tendencia Mensual', 14, yPos);
+        yPos += 5;
+
+        const trendData = reportData.monthlyTrend?.map(month => [
+          month.month,
+          formatMoney(month.income),
+          formatMoney(month.expenses),
+          formatMoney(month.savings)
+        ]) || [];
+
+        doc.autoTable({
+          startY: yPos,
+          head: [['Mes', 'Ingresos', 'Gastos', 'Ahorro']],
+          body: trendData,
+          theme: 'grid',
+          headStyles: { fillColor: [52, 211, 153] },
+          styles: { fontSize: 9 }
+        });
+
+        // Guardar PDF
+        console.log('💾 Guardando PDF...');
+        doc.save(`reporte-stonky-${new Date().toISOString().split('T')[0]}.pdf`);
+
+        alert(`✅ Reporte PDF generado exitosamente en ${currency}`);
+      }
+    } catch (error) {
+      console.error('❌ Error al generar PDF:', error);
+      alert(`❌ Error al generar el PDF: ${error.message}\n\nRevisa la consola para más detalles.`);
     }
   };
 
