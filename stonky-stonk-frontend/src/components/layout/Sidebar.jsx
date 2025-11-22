@@ -1,19 +1,21 @@
 import { Link, useLocation } from 'react-router-dom';
-import { 
-  DollarSign, 
-  BarChart3, 
-  CreditCard, 
-  Target, 
-  Wallet, 
-  FileText, 
-  TrendingUp, 
+import {
+  DollarSign,
+  BarChart3,
+  CreditCard,
+  Target,
+  Wallet,
+  FileText,
+  TrendingUp,
   Settings,
   LogOut,
   X
 } from 'lucide-react';
+import { useNotifications } from '../../context/NotificationsContext';
 
 export default function Sidebar({ isOpen, onClose, onLogout }) {
   const location = useLocation();
+  const { unreadCount } = useNotifications();
 
   const menuItems = [
     { path: '/dashboard', label: 'Dashboard', icon: BarChart3 },
@@ -89,27 +91,35 @@ export default function Sidebar({ isOpen, onClose, onLogout }) {
           {menuItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
-            
+            const showBadge = item.path === '/analysis' && unreadCount > 0;
+
             return (
               <Link
                 key={item.path}
                 to={item.path}
                 onClick={handleLinkClick}
                 className={`
-                  w-full flex items-center px-6 py-4 
+                  w-full flex items-center justify-between px-6 py-4
                   text-left transition-all duration-200 group
-                  ${active 
-                    ? 'bg-green-800 text-green-100 border-r-4 border-green-400' 
+                  ${active
+                    ? 'bg-green-800 text-green-100 border-r-4 border-green-400'
                     : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                   }
                 `}
                 aria-current={active ? 'page' : undefined}
               >
-                <Icon className={`
-                  h-5 w-5 mr-4 transition-colors flex-shrink-0
-                  ${active ? 'text-green-400' : 'text-gray-400 group-hover:text-green-400'}
-                `} />
-                <span className="font-medium truncate">{item.label}</span>
+                <div className="flex items-center">
+                  <Icon className={`
+                    h-5 w-5 mr-4 transition-colors flex-shrink-0
+                    ${active ? 'text-green-400' : 'text-gray-400 group-hover:text-green-400'}
+                  `} />
+                  <span className="font-medium truncate">{item.label}</span>
+                </div>
+                {showBadge && (
+                  <span className="flex items-center justify-center min-w-[1.5rem] h-6 px-2 bg-red-500 text-white text-xs font-bold rounded-full">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
               </Link>
             );
           })}
