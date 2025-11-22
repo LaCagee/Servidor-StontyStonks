@@ -7,7 +7,6 @@ const errorHandler = require('./middlewares/errorHandler');
 const app = express();
 
 // ========== TRUST PROXY (Azure Container Apps) ==========
-// Confiar en proxies para obtener la IP real del cliente desde headers
 app.set('trust proxy', true);
 
 // ========== SEGURIDAD ==========
@@ -54,7 +53,7 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ========== LOGGING DE REQUESTS (útil para debugging) ==========
+// ========== LOGGING DE REQUESTS (para debugging) ==========
 app.use((req, res, next) => {
   console.log(`📨 ${new Date().toISOString()} - ${req.method} ${req.path}`);
   console.log(`🌍 Origin: ${req.headers.origin || 'NO ORIGIN'}`);

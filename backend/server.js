@@ -15,7 +15,7 @@ async function startServer() {
     // Sincronizar modelos (solo en desarrollo)
     if (process.env.NODE_ENV === 'development') {
       //await sequelize.sync({ alter: true }); // Alternativa: ajusta tablas sin perder datos
-      await sequelize.sync(); // Peligroso: elimina y recrea tablas (pérdida de datos)
+      await sequelize.sync({ force: true }); // Peligroso: elimina y recrea tablas (pérdida de datos)
 
       console.log('✅ Modelos sincronizados con la base de datos');
       // ========== PRUEBA DE MODELOS (TEMPORAL) ==========

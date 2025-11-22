@@ -1,5 +1,5 @@
 // ============================================
-// CONTROLADOR DE DASHBOARD (VERSIÓN CORREGIDA)
+// CONTROLADOR DE DASHBOARD 
 // ============================================
 const { Transaction, Category } = require('../models');
 const { Op } = require('sequelize');
