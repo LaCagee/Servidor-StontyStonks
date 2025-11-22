@@ -6,13 +6,17 @@ import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
 import { Download, Filter, Calendar, BarChart3, TrendingUp, PieChart, ArrowUpRight, ArrowDownLeft, X, DollarSign } from 'lucide-react';
-import { formatCLP } from '../utils/currency';
+import { formatCLP } from '../utils/currency'; // mantener pa retrocompatibilidad
+import { useSettings } from '../context/SettingsContext'; // pa usar moneda del usuario
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
 const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'https://stonky-backend.blackdune-587dd75b.westus3.azurecontainerapps.io'}/api`;
 
 export default function Reports() {
+  // usar el contexto de configuraciones pa formatear con la moneda correcta
+  const { formatMoney, currency } = useSettings();
+
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [balance, setBalance] = useState(0);
@@ -75,7 +79,7 @@ export default function Reports() {
     loadReportData();
   }, [filters]);
 
-  // EXPORTAR A PDF
+  // EXPORTAR A PDF (ahora usa la moneda del usuario)
   const handleExportReport = async (format) => {
     if (!reportData) {
       alert('No hay datos de reporte disponibles para exportar');
@@ -92,22 +96,23 @@ export default function Reports() {
       doc.setFontSize(10);
       doc.text(`Período: ${reportData.period?.startDate || 'N/A'} - ${reportData.period?.endDate || 'N/A'}`, 14, 30);
       doc.text(`Generado: ${new Date().toLocaleDateString('es-CL')}`, 14, 35);
+      doc.text(`Moneda: ${currency}`, 14, 40); // mostrar la moneda usada
 
       // Línea separadora
       doc.setLineWidth(0.5);
-      doc.line(14, 40, 196, 40);
+      doc.line(14, 45, 196, 45);
 
       // Resumen Ejecutivo
       doc.setFontSize(14);
-      doc.text('Resumen Ejecutivo', 14, 50);
+      doc.text('Resumen Ejecutivo', 14, 55);
 
       doc.setFontSize(10);
-      let yPos = 60;
-      doc.text(`Ingresos Totales: ${formatCLP(reportData.summary?.totalIncome || 0)}`, 14, yPos);
+      let yPos = 65;
+      doc.text(`Ingresos Totales: ${formatMoney(reportData.summary?.totalIncome || 0)}`, 14, yPos);
       yPos += 7;
-      doc.text(`Gastos Totales: ${formatCLP(reportData.summary?.totalExpenses || 0)}`, 14, yPos);
+      doc.text(`Gastos Totales: ${formatMoney(reportData.summary?.totalExpenses || 0)}`, 14, yPos);
       yPos += 7;
-      doc.text(`Ahorro Neto: ${formatCLP(reportData.summary?.netSavings || 0)}`, 14, yPos);
+      doc.text(`Ahorro Neto: ${formatMoney(reportData.summary?.netSavings || 0)}`, 14, yPos);
       yPos += 7;
       doc.text(`Tasa de Ahorro: ${reportData.summary?.savingsRate || 0}%`, 14, yPos);
       yPos += 7;
@@ -123,7 +128,7 @@ export default function Reports() {
 
       const categoryData = reportData.expensesByCategory?.map(cat => [
         cat.category,
-        formatCLP(cat.amount),
+        formatMoney(cat.amount),
         `${cat.percentage}%`
       ]) || [];
 
@@ -150,9 +155,9 @@ export default function Reports() {
 
       const trendData = reportData.monthlyTrend?.map(month => [
         month.month,
-        formatCLP(month.income),
-        formatCLP(month.expenses),
-        formatCLP(month.savings)
+        formatMoney(month.income),
+        formatMoney(month.expenses),
+        formatMoney(month.savings)
       ]) || [];
 
       doc.autoTable({
@@ -167,7 +172,7 @@ export default function Reports() {
       // Guardar PDF
       doc.save(`reporte-stonky-${new Date().toISOString().split('T')[0]}.pdf`);
 
-      alert('Reporte PDF generado exitosamente');
+      alert(`✅ Reporte PDF generado exitosamente en ${currency}`);
     }
   };
 
@@ -192,25 +197,25 @@ export default function Reports() {
             sections: [
               {
                 title: 'Entradas de Efectivo',
-                value: formatCLP(reportData?.summary?.totalIncome || 0),
+                value: formatMoney(reportData?.summary?.totalIncome || 0),
                 items: [
-                  { label: 'Ingresos del período', value: formatCLP(reportData?.summary?.totalIncome || 0) },
+                  { label: 'Ingresos del período', value: formatMoney(reportData?.summary?.totalIncome || 0) },
                   { label: 'Crecimiento vs período anterior', value: `${reportData?.summary?.incomeGrowth || 0}%` }
                 ]
               },
               {
                 title: 'Salidas de Efectivo',
-                value: formatCLP(reportData?.summary?.totalExpenses || 0),
+                value: formatMoney(reportData?.summary?.totalExpenses || 0),
                 items: [
-                  { label: 'Gastos del período', value: formatCLP(reportData?.summary?.totalExpenses || 0) },
+                  { label: 'Gastos del período', value: formatMoney(reportData?.summary?.totalExpenses || 0) },
                   { label: 'Crecimiento vs período anterior', value: `${reportData?.summary?.expenseGrowth || 0}%` }
                 ]
               },
               {
                 title: 'Flujo Neto',
-                value: formatCLP(reportData?.summary?.netSavings || 0),
+                value: formatMoney(reportData?.summary?.netSavings || 0),
                 items: [
-                  { label: 'Saldo final del período', value: formatCLP(reportData?.summary?.netSavings || 0) },
+                  { label: 'Saldo final del período', value: formatMoney(reportData?.summary?.netSavings || 0) },
                   { label: 'Tasa de ahorro', value: `${reportData?.summary?.savingsRate || 0}%` }
                 ]
               }
@@ -229,7 +234,7 @@ export default function Reports() {
                 title: 'Categoría Principal',
                 value: topCategory.category || 'N/A',
                 items: [
-                  { label: 'Monto gastado', value: formatCLP(topCategory.amount || 0) },
+                  { label: 'Monto gastado', value: formatMoney(topCategory.amount || 0) },
                   { label: 'Porcentaje del total', value: `${topCategory.percentage || 0}%` }
                 ]
               },
@@ -238,7 +243,7 @@ export default function Reports() {
                 value: `${reportData?.expensesByCategory?.length || 0} categorías`,
                 items: reportData?.expensesByCategory?.slice(0, 5).map(cat => ({
                   label: cat.category,
-                  value: formatCLP(cat.amount)
+                  value: formatMoney(cat.amount)
                 })) || []
               },
               {
@@ -266,7 +271,7 @@ export default function Reports() {
             sections: [
               {
                 title: 'Ahorro Mensual Actual',
-                value: formatCLP(monthlySavings),
+                value: formatMoney(monthlySavings),
                 items: [
                   { label: 'Tasa de ahorro', value: `${reportData?.summary?.savingsRate || 0}%` },
                   { label: 'Base para proyección', value: 'Últimos 30 días' }
@@ -276,18 +281,18 @@ export default function Reports() {
                 title: 'Proyecciones',
                 value: 'Escenario conservador',
                 items: [
-                  { label: '3 meses', value: formatCLP(projectedSavings3m) },
-                  { label: '6 meses', value: formatCLP(projectedSavings6m) },
-                  { label: '12 meses', value: formatCLP(projectedSavings12m) }
+                  { label: '3 meses', value: formatMoney(projectedSavings3m) },
+                  { label: '6 meses', value: formatMoney(projectedSavings6m) },
+                  { label: '12 meses', value: formatMoney(projectedSavings12m) }
                 ]
               },
               {
                 title: 'Optimización Posible',
                 value: 'Con ajustes sugeridos',
                 items: [
-                  { label: '3 meses (+15%)', value: formatCLP(projectedSavings3m * 1.15) },
-                  { label: '6 meses (+15%)', value: formatCLP(projectedSavings6m * 1.15) },
-                  { label: '12 meses (+15%)', value: formatCLP(projectedSavings12m * 1.15) }
+                  { label: '3 meses (+15%)', value: formatMoney(projectedSavings3m * 1.15) },
+                  { label: '6 meses (+15%)', value: formatMoney(projectedSavings6m * 1.15) },
+                  { label: '12 meses (+15%)', value: formatMoney(projectedSavings12m * 1.15) }
                 ]
               }
             ]
@@ -304,9 +309,9 @@ export default function Reports() {
                 title: 'Período Actual',
                 value: `${reportData?.period?.startDate || ''} - ${reportData?.period?.endDate || ''}`,
                 items: [
-                  { label: 'Ingresos', value: formatCLP(reportData?.summary?.totalIncome || 0) },
-                  { label: 'Gastos', value: formatCLP(reportData?.summary?.totalExpenses || 0) },
-                  { label: 'Ahorro', value: formatCLP(reportData?.summary?.netSavings || 0) }
+                  { label: 'Ingresos', value: formatMoney(reportData?.summary?.totalIncome || 0) },
+                  { label: 'Gastos', value: formatMoney(reportData?.summary?.totalExpenses || 0) },
+                  { label: 'Ahorro', value: formatMoney(reportData?.summary?.netSavings || 0) }
                 ]
               },
               {
@@ -323,8 +328,8 @@ export default function Reports() {
                 value: reportData?.monthlyTrend?.length > 0 ? 'Positiva' : 'Estable',
                 items: [
                   { label: 'Meses analizados', value: `${reportData?.monthlyTrend?.length || 0}` },
-                  { label: 'Promedio mensual ingresos', value: formatCLP((reportData?.summary?.totalIncome || 0) / (reportData?.monthlyTrend?.length || 1)) },
-                  { label: 'Promedio mensual gastos', value: formatCLP((reportData?.summary?.totalExpenses || 0) / (reportData?.monthlyTrend?.length || 1)) }
+                  { label: 'Promedio mensual ingresos', value: formatMoney((reportData?.summary?.totalIncome || 0) / (reportData?.monthlyTrend?.length || 1)) },
+                  { label: 'Promedio mensual gastos', value: formatMoney((reportData?.summary?.totalExpenses || 0) / (reportData?.monthlyTrend?.length || 1)) }
                 ]
               }
             ]
@@ -405,7 +410,7 @@ export default function Reports() {
                         <span>{reportData.summary.incomeGrowth}%</span>
                       </div>
                     </div>
-                    <span className="value income">{formatCLP(reportData.summary.totalIncome)}</span>
+                    <span className="value income">{formatMoney(reportData.summary.totalIncome)}</span>
                     <span className="sublabel">vs periodo anterior</span>
                   </div>
 
@@ -417,7 +422,7 @@ export default function Reports() {
                         <span>{Math.abs(reportData.summary.expenseGrowth)}%</span>
                       </div>
                     </div>
-                    <span className="value expense">{formatCLP(reportData.summary.totalExpenses)}</span>
+                    <span className="value expense">{formatMoney(reportData.summary.totalExpenses)}</span>
                     <span className="sublabel">vs periodo anterior</span>
                   </div>
 
@@ -426,7 +431,7 @@ export default function Reports() {
                       <span className="label">Ahorro Neto</span>
                       <TrendingUp className="header-icon" />
                     </div>
-                    <span className="value savings">{formatCLP(reportData.summary.netSavings)}</span>
+                    <span className="value savings">{formatMoney(reportData.summary.netSavings)}</span>
                     <span className="sublabel">disponible para invertir</span>
                   </div>
 
@@ -462,7 +467,7 @@ export default function Reports() {
                             <span>{Math.abs(item.trend)}%</span>
                           </div>
                         </div>
-                        <span className="category-amount">{formatCLP(item.amount)}</span>
+                        <span className="category-amount">{formatMoney(item.amount)}</span>
                       </div>
                       <div className="category-progress">
                         <div className="progress-bar">
@@ -481,7 +486,7 @@ export default function Reports() {
                   ))}
                 </div>
                 <div className="chart-footer">
-                  <span className="footer-text">Gasto total: {formatCLP(reportData.summary.totalExpenses)}</span>
+                  <span className="footer-text">Gasto total: {formatMoney(reportData.summary.totalExpenses)}</span>
                 </div>
               </Card>
 
@@ -495,12 +500,12 @@ export default function Reports() {
                         <div
                           className="trend-bar income"
                           style={{ height: `${(month.income / 500000) * 100}%` }}
-                          title={`Ingresos: ${formatCLP(month.income)}`}
+                          title={`Ingresos: ${formatMoney(month.income)}`}
                         ></div>
                         <div
                           className="trend-bar expense"
                           style={{ height: `${(month.expenses / 500000) * 100}%` }}
-                          title={`Gastos: ${formatCLP(month.expenses)}`}
+                          title={`Gastos: ${formatMoney(month.expenses)}`}
                         ></div>
                       </div>
                       <div className="month-details">
@@ -557,7 +562,7 @@ export default function Reports() {
                   </div>
                   <div className="info-text">
                     <span className="info-label">Ahorro Acumulado</span>
-                    <span className="info-value">{formatCLP(reportData.summary.netSavings)}</span>
+                    <span className="info-value">{formatMoney(reportData.summary.netSavings)}</span>
                     <span className="info-sublabel">En este periodo</span>
                   </div>
                 </div>

@@ -5,10 +5,14 @@ import Card from '../components/ui/Card';
 // estos son los iconos que usamos pa que se vea bonito
 import { DollarSign, ArrowUpCircle, ArrowDownCircle, Target, TrendingUp, CreditCard, AlertCircle, RefreshCw } from 'lucide-react';
 import axios from 'axios';
-// esto es pa formatear la plata en pesos chilenos
-import { formatCLP, formatPercentage } from '../utils/currency';
+// esto es pa formatear la plata con la moneda del usuario
+import { formatCLP, formatPercentage } from '../utils/currency'; // mantener pa retrocompatibilidad
+import { useSettings } from '../context/SettingsContext'; // pa usar moneda del usuario
 
 export default function Dashboard() {
+  // usar el contexto de configuraciones pa formatear con la moneda correcta
+  const { formatMoney, formatPercentage: formatPercent } = useSettings();
+
   // aca guardamos toda la info que necesitamos mostrar
   const [transactions, setTransactions] = useState([]); // las transacciones del usuario
   const [dashboardData, setDashboardData] = useState(null); // info general del dashboard
@@ -214,11 +218,11 @@ export default function Dashboard() {
               <div className="flex-1">
                 <p className="card-label">Saldo Total</p>
                 <p className="card-value">
-                  {formatCLP(balance)}
+                  {formatMoney(balance)}
                 </p>
                 <div className={`card-change mt-3 ${parseFloat(balanceChange) >= 0 ? 'card-change-positive' : 'card-change-negative'}`}>
                   <span>{parseFloat(balanceChange) >= 0 ? '↑' : '↓'}</span>
-                  {parseFloat(balanceChange) >= 0 ? '+' : ''}{formatPercentage(balanceChange)} vs mes anterior
+                  {parseFloat(balanceChange) >= 0 ? '+' : ''}{formatPercent(balanceChange)} vs mes anterior
                 </div>
               </div>
               <div className="card-icon">
@@ -233,11 +237,11 @@ export default function Dashboard() {
               <div className="flex-1">
                 <p className="card-label">Ingresos</p>
                 <p className="card-value">
-                  {formatCLP(income)}
+                  {formatMoney(income)}
                 </p>
                 <div className={`card-change mt-3 ${parseFloat(incomeChange) >= 0 ? 'card-change-positive' : 'card-change-negative'}`}>
                   <span>{parseFloat(incomeChange) >= 0 ? '↑' : '↓'}</span>
-                  {parseFloat(incomeChange) >= 0 ? '+' : ''}{formatPercentage(incomeChange)} vs mes anterior
+                  {parseFloat(incomeChange) >= 0 ? '+' : ''}{formatPercent(incomeChange)} vs mes anterior
                 </div>
               </div>
               <div className="card-icon">
@@ -252,11 +256,11 @@ export default function Dashboard() {
               <div className="flex-1">
                 <p className="card-label">Gastos</p>
                 <p className="card-value">
-                  {formatCLP(expenses)}
+                  {formatMoney(expenses)}
                 </p>
                 <div className={`card-change mt-3 ${parseFloat(expenseChange) <= 0 ? 'card-change-positive' : 'card-change-negative'}`}>
                   <span>{parseFloat(expenseChange) <= 0 ? '↓' : '↑'}</span>
-                  {parseFloat(expenseChange) >= 0 ? '+' : ''}{formatPercentage(expenseChange)} vs mes anterior
+                  {parseFloat(expenseChange) >= 0 ? '+' : ''}{formatPercent(expenseChange)} vs mes anterior
                 </div>
               </div>
               <div className="card-icon">
@@ -272,7 +276,7 @@ export default function Dashboard() {
                 <p className="card-label">Metas Activas</p>
                 <p className="card-value">{goals.length}</p>
                 <div className="card-change card-change-neutral mt-3">
-                  {formatPercentage(previousMonthData?.avgProgress || 0)} completado promedio
+                  {formatPercent(previousMonthData?.avgProgress || 0)} completado promedio
                 </div>
               </div>
               <div className="card-icon">
@@ -294,19 +298,19 @@ export default function Dashboard() {
                     <div className="bg-green-500 bg-opacity-10 border border-green-500 border-opacity-20 rounded-lg p-3">
                       <p className="text-xs text-green-400 mb-1">Ingresos Totales</p>
                       <p className="text-lg font-bold text-green-400">
-                        {formatCLP(monthlyTrend.reduce((sum, m) => sum + (m.income || 0), 0))}
+                        {formatMoney(monthlyTrend.reduce((sum, m) => sum + (m.income || 0), 0))}
                       </p>
                     </div>
                     <div className="bg-red-500 bg-opacity-10 border border-red-500 border-opacity-20 rounded-lg p-3">
                       <p className="text-xs text-red-400 mb-1">Gastos Totales</p>
                       <p className="text-lg font-bold text-red-400">
-                        {formatCLP(monthlyTrend.reduce((sum, m) => sum + (m.expense || 0), 0))}
+                        {formatMoney(monthlyTrend.reduce((sum, m) => sum + (m.expense || 0), 0))}
                       </p>
                     </div>
                     <div className="bg-blue-500 bg-opacity-10 border border-blue-500 border-opacity-20 rounded-lg p-3">
                       <p className="text-xs text-blue-400 mb-1">Balance</p>
                       <p className="text-lg font-bold text-blue-400">
-                        {formatCLP(monthlyTrend.reduce((sum, m) => sum + ((m.income || 0) - (m.expense || 0)), 0))}
+                        {formatMoney(monthlyTrend.reduce((sum, m) => sum + ((m.income || 0) - (m.expense || 0)), 0))}
                       </p>
                     </div>
                   </div>
@@ -346,7 +350,7 @@ export default function Dashboard() {
                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/bar:block z-20">
                                   <div className="bg-slate-900 border border-green-500 rounded-lg px-3 py-2 text-xs whitespace-nowrap shadow-xl">
                                     <p className="text-green-400 font-semibold">Ingresos</p>
-                                    <p className="text-white">{formatCLP(incomeValue)}</p>
+                                    <p className="text-white">{formatMoney(incomeValue)}</p>
                                   </div>
                                 </div>
                               </div>
@@ -364,7 +368,7 @@ export default function Dashboard() {
                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/bar:block z-20">
                                   <div className="bg-slate-900 border border-red-500 rounded-lg px-3 py-2 text-xs whitespace-nowrap shadow-xl">
                                     <p className="text-red-400 font-semibold">Gastos</p>
-                                    <p className="text-white">{formatCLP(expenseValue)}</p>
+                                    <p className="text-white">{formatMoney(expenseValue)}</p>
                                   </div>
                                 </div>
                               </div>
@@ -391,16 +395,16 @@ export default function Dashboard() {
                                 <div className="space-y-2 text-xs">
                                   <div className="flex justify-between">
                                     <span className="text-green-400">↑ Ingresos:</span>
-                                    <span className="text-white font-semibold">{formatCLP(incomeValue)}</span>
+                                    <span className="text-white font-semibold">{formatMoney(incomeValue)}</span>
                                   </div>
                                   <div className="flex justify-between">
                                     <span className="text-red-400">↓ Gastos:</span>
-                                    <span className="text-white font-semibold">{formatCLP(expenseValue)}</span>
+                                    <span className="text-white font-semibold">{formatMoney(expenseValue)}</span>
                                   </div>
                                   <div className="flex justify-between border-t border-slate-700 pt-2">
                                     <span className="text-blue-400">= Balance:</span>
                                     <span className={`font-bold ${incomeValue - expenseValue >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                      {formatCLP(incomeValue - expenseValue)}
+                                      {formatMoney(incomeValue - expenseValue)}
                                     </span>
                                   </div>
                                   {month.transactionCount > 0 && (
@@ -477,7 +481,7 @@ export default function Dashboard() {
                           ? 'text-green-400'
                           : 'text-red-400'
                       }`}>
-                        {transaction.type === 'income' ? '+' : '-'}{formatCLP(transaction.amount)}
+                        {transaction.type === 'income' ? '+' : '-'}{formatMoney(transaction.amount)}
                       </span>
                     </div>
                   ))}
@@ -497,7 +501,7 @@ export default function Dashboard() {
             <div className="info-card">
               <p className="card-label">Promedio Ingresos</p>
               <p className="card-value text-green-400">
-                {formatCLP(
+                {formatMoney(
                   monthlyTrend.reduce((acc, m) => acc + (m.income || 0), 0) / monthlyTrend.length
                 )}
               </p>
@@ -505,7 +509,7 @@ export default function Dashboard() {
             <div className="info-card">
               <p className="card-label">Promedio Gastos</p>
               <p className="card-value text-red-400">
-                {formatCLP(
+                {formatMoney(
                   monthlyTrend.reduce((acc, m) => acc + (m.expense || 0), 0) / monthlyTrend.length
                 )}
               </p>
@@ -513,7 +517,7 @@ export default function Dashboard() {
             <div className="info-card">
               <p className="card-label">Total Período</p>
               <p className="card-value text-blue-400">
-                {formatCLP(
+                {formatMoney(
                   monthlyTrend.reduce((acc, m) => acc + ((m.income || 0) - (m.expense || 0)), 0)
                 )}
               </p>
@@ -521,7 +525,7 @@ export default function Dashboard() {
             <div className="info-card">
               <p className="card-label">Tasa Ahorro</p>
               <p className="card-value text-yellow-400">
-                {formatPercentage(
+                {formatPercent(
                   (monthlyTrend.reduce((acc, m) => acc + ((m.income || 0) - (m.expense || 0)), 0) /
                   monthlyTrend.reduce((acc, m) => acc + (m.income || 0), 0)) * 100
                 )}
