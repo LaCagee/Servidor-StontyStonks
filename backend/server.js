@@ -14,13 +14,18 @@ async function startServer() {
 
     // Sincronizar modelos (solo en desarrollo)
     if (process.env.NODE_ENV === 'development') {
-      //await sequelize.sync({ alter: true }); // Alternativa: ajusta tablas sin perder datos
-      await sequelize.sync({ force: true }); // Peligroso: elimina y recrea tablas (pérdida de datos)
+      // IMPORTANTE: alter actualiza las tablas sin perder datos
+      // force: true elimina y recrea (solo usar la primera vez)
+      await sequelize.sync({ alter: true }); // ✅ Ajusta tablas sin perder datos
+      // await sequelize.sync({ force: true }); // ⚠️ Solo usar si necesitas resetear TODO
 
       console.log('✅ Modelos sincronizados con la base de datos');
-      // ========== PRUEBA DE MODELOS (TEMPORAL) ==========
-      console.log('\n🧪 Probando modelos...\n');
+
+      // Crear categorías del sistema si no existen
       await Category.createSystemCategories();
+
+      // ========== ESTADÍSTICAS DE LA BD (TEMPORAL) ==========
+      console.log('\n📊 Estadísticas de la base de datos:\n');
       // Contar registros existentes
       const userCount = await User.count();
       const tokenCount = await Token.count();
