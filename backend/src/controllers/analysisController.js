@@ -256,3 +256,111 @@ exports.getInsights = async (req, res) => {
     });
   }
 };
+
+// ==================== OBTENER PROYECCIONES FUTURAS ====================
+exports.getProjections = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const now = new Date();
+
+    // Obtener transacciones de los últimos 6 meses para proyecciones más precisas
+    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, 1);
+    const endOfCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    const historicalTransactions = await Transaction.findAll({
+      where: {
+        userId,
+        isActive: true,
+        date: {
+          [Op.between]: [sixMonthsAgo, endOfCurrentMonth]
+        }
+      }
+    });
+
+    // Calcular promedios mensuales
+    const monthlyData = {};
+    historicalTransactions.forEach(transaction => {
+      const monthKey = `${transaction.date.getFullYear()}-${String(transaction.date.getMonth() + 1).padStart(2, '0')}`;
+      if (!monthlyData[monthKey]) {
+        monthlyData[monthKey] = { income: 0, expense: 0 };
+      }
+      if (transaction.type === 'income') {
+        monthlyData[monthKey].income += parseFloat(transaction.amount);
+      } else {
+        monthlyData[monthKey].expense += parseFloat(transaction.amount);
+      }
+    });
+
+    // Calcular promedios
+    const months = Object.keys(monthlyData).length || 1;
+    const avgIncome = Object.values(monthlyData).reduce((sum, m) => sum + m.income, 0) / months;
+    const avgExpense = Object.values(monthlyData).reduce((sum, m) => sum + m.expense, 0) / months;
+    const avgSavings = avgIncome - avgExpense;
+
+    // Proyecciones para los próximos 3 meses
+    const projections = {
+      threeMonths: {
+        month1: avgSavings,
+        month2: avgSavings * 1.02, // Pequeña variación para realismo
+        month3: avgSavings * 0.98,
+        total: avgSavings * 3
+      },
+      sixMonths: {
+        total: avgSavings * 6
+      },
+      yearly: {
+        total: avgSavings * 12,
+        avgMonthly: avgSavings
+      },
+      chartData: [
+        { month: 'Mes 1', savings: Math.round(avgSavings), income: Math.round(avgIncome), expense: Math.round(avgExpense) },
+        { month: 'Mes 2', savings: Math.round(avgSavings * 1.02), income: Math.round(avgIncome * 1.01), expense: Math.round(avgExpense * 0.99) },
+        { month: 'Mes 3', savings: Math.round(avgSavings * 0.98), income: Math.round(avgIncome * 0.99), expense: Math.round(avgExpense * 1.01) }
+      ]
+    };
+
+    // Calcular progreso hacia meta anual (basado en ahorro actual vs proyección)
+    const currentYearStart = new Date(now.getFullYear(), 0, 1);
+    const currentYearTransactions = await Transaction.findAll({
+      where: {
+        userId,
+        isActive: true,
+        date: {
+          [Op.between]: [currentYearStart, now]
+        }
+      }
+    });
+
+    const yearToDateIncome = currentYearTransactions
+      .filter(t => t.type === 'income')
+      .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+
+    const yearToDateExpense = currentYearTransactions
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+
+    const yearToDateSavings = yearToDateIncome - yearToDateExpense;
+    const annualGoal = avgSavings * 12; // Meta anual basada en promedio
+    const progressPercentage = annualGoal > 0 ? Math.min(100, (yearToDateSavings / annualGoal) * 100) : 0;
+
+    const monthsRemaining = 12 - now.getMonth();
+
+    res.json({
+      message: 'Proyecciones calculadas exitosamente',
+      projections,
+      annualGoal: {
+        target: Math.round(annualGoal),
+        current: Math.round(yearToDateSavings),
+        percentage: Math.round(progressPercentage * 10) / 10,
+        monthsRemaining
+      }
+    });
+
+  } catch (error) {
+    console.error('Error al calcular proyecciones:', error);
+    res.status(500).json({
+      error: 'Error al calcular proyecciones',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
