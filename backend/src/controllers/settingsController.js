@@ -8,7 +8,7 @@ const { Settings } = require('../models');
 // ==================== GET: Obtener configuración del usuario ====================
 exports.getSettings = async (req, res) => {
   try {
-    const userId = req.user.id; // viene del middleware auth
+    const userId = req.userId; // viene del middleware auth
 
     // buscamos la configuración del usuario
     let settings = await Settings.findOne({
@@ -63,7 +63,7 @@ exports.getSettings = async (req, res) => {
 // ==================== PUT: Actualizar configuración completa ====================
 exports.updateSettings = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.userId;
     const { profile, notifications, privacy } = req.body;
 
     // buscamos la configuración del usuario
@@ -140,7 +140,7 @@ exports.updateSettings = async (req, res) => {
 // ==================== PATCH: Actualizar solo una sección ====================
 exports.updateSettingsSection = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.userId;
     const { section } = req.params; // 'profile', 'notifications' o 'privacy'
     const data = req.body;
 

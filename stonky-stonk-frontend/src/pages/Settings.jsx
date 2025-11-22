@@ -84,7 +84,7 @@ export default function Settings() {
     loadUserData();
   }, [globalSettings]); // recarga cuando cambian las settings globales
 
-  // funcion pa guardar configuraciones (se conecta al backend real)
+  // funcion pa guardar configuraciones (solo preferencias: currency, language, notificaciones, privacidad)
   const handleSaveSettings = async (section, data) => {
     setSaving(true);
 
@@ -99,16 +99,6 @@ export default function Settings() {
       const result = await updateGlobalSettings(section, data);
 
       if (result.success) {
-        // si el section es profile, actualizar también el usuario en localStorage
-        if (section === 'profile') {
-          const userData = JSON.parse(localStorage.getItem('user') || '{}');
-          localStorage.setItem('user', JSON.stringify({
-            ...userData,
-            name: data.name || userData.name,
-            email: data.email || userData.email
-          }));
-        }
-
         alert('✅ Configuración guardada exitosamente');
 
         // recargar configuraciones del contexto pa asegurar sincronización
@@ -122,6 +112,42 @@ export default function Settings() {
 
       // revertir cambios en caso de error
       await loadSettings();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // funcion separada pa actualizar datos del perfil de usuario (nombre)
+  const handleSaveProfile = async () => {
+    setSaving(true);
+
+    try {
+      // actualizar nombre si cambió
+      const userData = JSON.parse(localStorage.getItem('user') || '{}');
+
+      if (settings.profile.name !== userData.name) {
+        const nameResponse = await axios.put(
+          `${API_BASE_URL}/users/profile/name`,
+          { name: settings.profile.name },
+          axiosConfig
+        );
+
+        if (nameResponse.data && nameResponse.data.user) {
+          // actualizar localStorage con los datos nuevos
+          localStorage.setItem('user', JSON.stringify(nameResponse.data.user));
+        }
+      }
+
+      // guardar preferencias (currency y language) en settings
+      await handleSaveSettings('profile', {
+        currency: settings.profile.currency,
+        language: settings.profile.language
+      });
+
+      alert('✅ Perfil actualizado exitosamente');
+    } catch (error) {
+      console.error('Error al actualizar perfil:', error);
+      alert('❌ Error al actualizar perfil. Intenta nuevamente.');
     } finally {
       setSaving(false);
     }
@@ -253,11 +279,11 @@ export default function Settings() {
                   </select>
                 </div>
               </div>
-              
-              <Button 
+
+              <Button
                 variant="primary"
                 loading={saving}
-                onClick={() => handleSaveSettings('profile', settings.profile)}
+                onClick={handleSaveProfile}
               >
                 Guardar Cambios
               </Button>
