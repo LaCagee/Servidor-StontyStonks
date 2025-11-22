@@ -590,6 +590,30 @@ aside > div:last-child button:hover svg {
   box-shadow: 0 0 20px rgba(52, 211, 153, 0.2);
 }
 
+/* Botón de Notificaciones en Navbar */
+.navbar button[aria-label="Notificaciones"] {
+  background: transparent !important;
+  border: none !important;
+  color: #9ca3af !important;
+  transition: all 0.2s ease !important;
+}
+
+.navbar button[aria-label="Notificaciones"]:hover {
+  background: rgba(31, 41, 55, 0.8) !important;
+  color: #ffffff !important;
+}
+
+.navbar button[aria-label="Notificaciones"] svg {
+  color: inherit !important;
+}
+
+/* Badge de notificaciones */
+.navbar button[aria-label="Notificaciones"] > span {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+  border: 2px solid #111827 !important;
+}
+
 @media (max-width: 1024px) {
   .navbar {
     padding: 0 1rem;
