@@ -7,7 +7,9 @@ const errorHandler = require('./middlewares/errorHandler');
 const app = express();
 
 // ========== TRUST PROXY (Azure Container Apps) ==========
-app.set('trust proxy', true);
+// Confiar solo en el primer proxy (Azure Container Apps)
+// Esto es más seguro que 'true' que confiaría en cualquier proxy
+app.set('trust proxy', 1);
 
 // ========== SEGURIDAD ==========
 app.use(helmet());
