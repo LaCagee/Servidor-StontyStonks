@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Edit2, Trash2, Plus, Pause, Play, Check, X, Target, CheckCircle, XCircle, Calendar, AlertTriangle, PartyPopper } from 'lucide-react';
+import { Edit2, Trash2, Plus, Pause, Play, Check, X, Target, CheckCircle, XCircle, Calendar, AlertTriangle, PartyPopper, Clock } from 'lucide-react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import { formatCLP } from '../../utils/currency';
