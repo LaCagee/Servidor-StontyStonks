@@ -6,6 +6,7 @@ import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
 import IncomeTrendChart from '../components/charts/IncomeTrendChart';
+import QuickReportModal from '../components/reports/QuickReportModal';
 import { Download, Filter, Calendar, BarChart3, TrendingUp, PieChart, ArrowUpRight, ArrowDownLeft, X, DollarSign } from 'lucide-react';
 import { formatCLP } from '../utils/currency'; // mantener pa retrocompatibilidad
 import { useSettings } from '../context/SettingsContext'; // pa usar moneda del usuario
@@ -658,45 +659,14 @@ export default function Reports() {
 
       {/* Modal de Reportes Rápidos */}
       {activeReport && reportModalData && (
-        <Modal
-          title={reportModalData.title}
+        <QuickReportModal
+          reportType={activeReport}
+          data={reportModalData}
           onClose={() => {
             setActiveReport(null);
             setReportModalData(null);
           }}
-        >
-          <div className="space-y-6">
-            <p className="text-gray-400">{reportModalData.description}</p>
-
-            {reportModalData.sections.map((section, idx) => (
-              <div key={idx} className="bg-gray-800 bg-opacity-50 rounded-lg p-4 border border-gray-700">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-lg font-semibold text-white">{section.title}</h4>
-                  <span className="text-xl font-bold text-green-400">{section.value}</span>
-                </div>
-                <div className="space-y-2">
-                  {section.items.map((item, itemIdx) => (
-                    <div key={itemIdx} className="flex justify-between text-sm">
-                      <span className="text-gray-400">{item.label}</span>
-                      <span className="text-white font-medium">{item.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-
-            <Button
-              variant="primary"
-              full
-              onClick={() => {
-                setActiveReport(null);
-                setReportModalData(null);
-              }}
-            >
-              Cerrar
-            </Button>
-          </div>
-        </Modal>
+        />
       )}
     </MainLayout>
   );
