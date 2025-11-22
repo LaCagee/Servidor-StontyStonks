@@ -814,7 +814,8 @@ aside > div:last-child button:hover svg {
 .text-left { text-align: left; }
 .text-right { text-align: right; }
 
-.text-white { color: #fff; }
+/* Utility classes - NO aplicar a botones */
+.text-white:not(button):not(button *) { color: #fff; }
 .text-slate-300 { color: #cbd5e1; }
 .text-slate-400 { color: #94a3af; }
 .text-slate-500 { color: #64748b; }
