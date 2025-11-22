@@ -4,13 +4,16 @@ import MainLayout from '../components/layout/MainLayout';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
+import ProjectionsChart from '../components/charts/ProjectionsChart';
 import { TrendingUp, AlertTriangle, Lightbulb, Target, ChevronRight, CheckCircle, Clock, Zap, X } from 'lucide-react';
-import { formatCLP } from '../utils/currency';
+import { useSettings } from '../context/SettingsContext';
 
 const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'https://stonky-backend.blackdune-587dd75b.westus3.azurecontainerapps.io'}/api`;
 
 export default function Analysis() {
+  const { formatMoney } = useSettings();
   const [insights, setInsights] = useState([]);
+  const [projections, setProjections] = useState(null);
   const [loading, setLoading] = useState(true);
   const [balance, setBalance] = useState(0);
   const [expandedInsight, setExpandedInsight] = useState(null);
@@ -58,7 +61,20 @@ export default function Analysis() {
       }
     };
 
+    const loadProjections = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/analysis/projections`, axiosConfig);
+        if (response.data) {
+          setProjections(response.data);
+        }
+      } catch (err) {
+        console.error('Error al cargar proyecciones:', err);
+        setProjections(null);
+      }
+    };
+
     loadInsights();
+    loadProjections();
 
     // Cargar insights guardados en localStorage
     const savedActioned = localStorage.getItem('actionedInsights');
@@ -185,7 +201,7 @@ export default function Analysis() {
               </div>
               <div className="metric-info">
                 <span className="metric-label">Ahorro Potencial</span>
-                <span className="metric-value">{formatCLP(potentialSavings)}</span>
+                <span className="metric-value">{formatMoney(potentialSavings)}</span>
                 <span className="metric-description">Oportunidades identificadas</span>
               </div>
               <div className="metric-badge">Este mes</div>
@@ -268,7 +284,7 @@ export default function Analysis() {
                       {insight.amount > 0 && (
                         <div className="insight-amount">
                           <span className="amount-label">Impacto</span>
-                          <span className="amount-value">{formatCLP(insight.amount)}</span>
+                          <span className="amount-value">{formatMoney(insight.amount)}</span>
                         </div>
                       )}
 
@@ -368,69 +384,83 @@ export default function Analysis() {
         {/* Análisis Predictivo Mejorado */}
         <div className="predictive-analysis">
           <Card title="Proyecciones Futuras" className="predictive-card">
-            <div className="predictive-content">
-              <div className="prediction-item">
-                <div className="prediction-header">
-                  <div>
-                    <h4>Próximos 3 Meses</h4>
-                    <p className="prediction-description">Basado en tus patrones actuales</p>
-                  </div>
-                  <div className="prediction-icon success">
-                    <TrendingUp />
-                  </div>
+            {projections ? (
+              <>
+                {/* Gráfico de Proyecciones */}
+                <div className="mb-6">
+                  <ProjectionsChart data={projections.projections.chartData} />
                 </div>
-                <div className="prediction-value">
-                  <span className="value-amount">$525,000</span>
-                  <span className="value-label">en ahorros proyectados</span>
-                </div>
-                <div className="prediction-bar">
-                  <div className="prediction-fill success" style={{ width: '65%' }}></div>
-                </div>
-                <div className="prediction-details">
-                  <span className="detail-item">
-                    <span className="detail-label">Mes 1:</span>
-                    <span className="detail-value">$175k</span>
-                  </span>
-                  <span className="detail-item">
-                    <span className="detail-label">Mes 2:</span>
-                    <span className="detail-value">$180k</span>
-                  </span>
-                  <span className="detail-item">
-                    <span className="detail-label">Mes 3:</span>
-                    <span className="detail-value">$170k</span>
-                  </span>
-                </div>
-              </div>
 
-              <div className="prediction-item">
-                <div className="prediction-header">
-                  <div>
-                    <h4>Meta Anual</h4>
-                    <p className="prediction-description">Progreso hacia tu objetivo</p>
+                <div className="predictive-content">
+                  <div className="prediction-item">
+                    <div className="prediction-header">
+                      <div>
+                        <h4>Próximos 3 Meses</h4>
+                        <p className="prediction-description">Basado en tus patrones actuales</p>
+                      </div>
+                      <div className="prediction-icon success">
+                        <TrendingUp />
+                      </div>
+                    </div>
+                    <div className="prediction-value">
+                      <span className="value-amount">{formatMoney(projections.projections.threeMonths.total)}</span>
+                      <span className="value-label">en ahorros proyectados</span>
+                    </div>
+                    <div className="prediction-bar">
+                      <div className="prediction-fill success" style={{ width: '65%' }}></div>
+                    </div>
+                    <div className="prediction-details">
+                      <span className="detail-item">
+                        <span className="detail-label">Mes 1:</span>
+                        <span className="detail-value">{formatMoney(projections.projections.threeMonths.month1)}</span>
+                      </span>
+                      <span className="detail-item">
+                        <span className="detail-label">Mes 2:</span>
+                        <span className="detail-value">{formatMoney(projections.projections.threeMonths.month2)}</span>
+                      </span>
+                      <span className="detail-item">
+                        <span className="detail-label">Mes 3:</span>
+                        <span className="detail-value">{formatMoney(projections.projections.threeMonths.month3)}</span>
+                      </span>
+                    </div>
                   </div>
-                  <div className="prediction-icon info">
-                    <Target />
+
+                  <div className="prediction-item">
+                    <div className="prediction-header">
+                      <div>
+                        <h4>Meta Anual</h4>
+                        <p className="prediction-description">Progreso hacia tu objetivo</p>
+                      </div>
+                      <div className="prediction-icon info">
+                        <Target />
+                      </div>
+                    </div>
+                    <div className="prediction-value">
+                      <span className="value-amount">{projections.annualGoal.percentage.toFixed(1)}%</span>
+                      <span className="value-label">de meta completada</span>
+                    </div>
+                    <div className="prediction-bar">
+                      <div className="prediction-fill info" style={{ width: `${Math.min(100, projections.annualGoal.percentage)}%` }}></div>
+                    </div>
+                    <div className="prediction-milestone">
+                      <div className="milestone-item">
+                        <span className="milestone-status">Completado</span>
+                        <span className="milestone-amount">{formatMoney(projections.annualGoal.current)} de {formatMoney(projections.annualGoal.target)}</span>
+                      </div>
+                      <div className="milestone-time">
+                        <Clock className="milestone-icon" />
+                        <span>{projections.annualGoal.monthsRemaining} meses restantes</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="prediction-value">
-                  <span className="value-amount">85%</span>
-                  <span className="value-label">de meta completada</span>
-                </div>
-                <div className="prediction-bar">
-                  <div className="prediction-fill info" style={{ width: '85%' }}></div>
-                </div>
-                <div className="prediction-milestone">
-                  <div className="milestone-item">
-                    <span className="milestone-status">Completado</span>
-                    <span className="milestone-amount">$2.1M de $2.5M</span>
-                  </div>
-                  <div className="milestone-time">
-                    <Clock className="milestone-icon" />
-                    <span>4 meses restantes</span>
-                  </div>
-                </div>
+              </>
+            ) : (
+              <div className="loading-state">
+                <Zap className="loading-icon" />
+                <p>Calculando proyecciones...</p>
               </div>
-            </div>
+            )}
           </Card>
 
           {/* Recomendaciones Finales */}
@@ -498,7 +528,7 @@ export default function Analysis() {
                 <div className="flex justify-between">
                   <span className="text-gray-400">Impacto estimado:</span>
                   <span className="text-green-400 font-medium">
-                    {selectedInsight.amount > 0 ? formatCLP(selectedInsight.amount) : 'Positivo'}
+                    {selectedInsight.amount > 0 ? formatMoney(selectedInsight.amount) : 'Positivo'}
                   </span>
                 </div>
                 <div className="flex justify-between">

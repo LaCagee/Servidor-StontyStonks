@@ -15,4 +15,11 @@ router.get(
   analysisController.getInsights
 );
 
+// Obtener proyecciones futuras
+router.get(
+  '/projections',
+  authMiddleware,
+  analysisController.getProjections
+);
+
 module.exports = router;
