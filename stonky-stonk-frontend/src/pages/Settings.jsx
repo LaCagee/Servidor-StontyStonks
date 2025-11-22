@@ -27,10 +27,6 @@ export default function Settings() {
       push: true,
       monthlyReports: true,
       budgetAlerts: true
-    },
-    privacy: {
-      dataSharing: false,
-      analytics: true
     }
   });
   const [loading, setLoading] = useState(true);
@@ -73,8 +69,7 @@ export default function Settings() {
           currency: globalSettings.profile.currency,
           language: globalSettings.profile.language
         },
-        notifications: globalSettings.notifications,
-        privacy: globalSettings.privacy
+        notifications: globalSettings.notifications
       };
 
       setSettings(mergedSettings);
@@ -156,27 +151,32 @@ export default function Settings() {
   // exportar todos los datos del usuario en formato CSV
   const handleExportData = async () => {
     try {
+      console.log('📥 Iniciando exportación de datos...');
+
       // traer todas las transacciones del usuario
       const response = await axios.get(`${API_BASE_URL}/transactions?limit=10000`, axiosConfig);
       const transactions = response.data.transactions || [];
+
+      console.log(`✅ ${transactions.length} transacciones encontradas`);
 
       if (transactions.length === 0) {
         alert('No hay datos para exportar');
         return;
       }
 
-      // crear CSV con los datos
+      // crear CSV con los datos (con BOM para UTF-8)
+      const BOM = '\uFEFF';
       const csvHeaders = ['Fecha', 'Tipo', 'Categoría', 'Descripción', 'Monto'];
       const csvRows = transactions.map(t => [
         new Date(t.date).toLocaleDateString('es-CL'),
         t.type === 'income' ? 'Ingreso' : 'Gasto',
-        t.category?.name || 'Sin categoría',
-        t.description || '',
-        t.amount
+        t.category?.name || t.categoryId || 'Sin categoría',
+        (t.description || '').replace(/"/g, '""'), // Escapar comillas
+        parseFloat(t.amount || 0).toFixed(2)
       ]);
 
       // convertir a string CSV
-      const csvContent = [
+      const csvContent = BOM + [
         csvHeaders.join(','),
         ...csvRows.map(row => row.map(cell => `"${cell}"`).join(','))
       ].join('\n');
@@ -192,10 +192,11 @@ export default function Settings() {
       link.click();
       document.body.removeChild(link);
 
+      console.log('✅ Descarga iniciada');
       alert('✅ Datos exportados exitosamente');
     } catch (error) {
-      console.error('Error al exportar datos:', error);
-      alert('❌ Error al exportar datos. Intenta nuevamente.');
+      console.error('❌ Error al exportar datos:', error);
+      alert(`❌ Error al exportar datos: ${error.message}\n\nRevisa la consola para más detalles.`);
     }
   };
 
@@ -353,55 +354,6 @@ export default function Settings() {
                 onClick={() => handleSaveSettings('notifications', settings.notifications)}
               >
                 Guardar Preferencias
-              </Button>
-            </div>
-          </Card>
-
-          {/* Privacidad y Seguridad */}
-          <Card title="Privacidad y Seguridad" icon={<Shield className="card-icon" />}>
-            <div className="settings-list">
-              <div className="setting-item">
-                <div className="setting-info">
-                  <span className="setting-label">Compartir Datos Anónimos</span>
-                  <span className="setting-description">Ayúdanos a mejorar la aplicación</span>
-                </div>
-                <label className="toggle-switch">
-                  <input 
-                    type="checkbox" 
-                    checked={settings.privacy.dataSharing}
-                    onChange={(e) => setSettings(prev => ({
-                      ...prev,
-                      privacy: { ...prev.privacy, dataSharing: e.target.checked }
-                    }))}
-                  />
-                  <span className="toggle-slider"></span>
-                </label>
-              </div>
-              
-              <div className="setting-item">
-                <div className="setting-info">
-                  <span className="setting-label">Análisis de Datos</span>
-                  <span className="setting-description">Habilita análisis inteligente</span>
-                </div>
-                <label className="toggle-switch">
-                  <input 
-                    type="checkbox" 
-                    checked={settings.privacy.analytics}
-                    onChange={(e) => setSettings(prev => ({
-                      ...prev,
-                      privacy: { ...prev.privacy, analytics: e.target.checked }
-                    }))}
-                  />
-                  <span className="toggle-slider"></span>
-                </label>
-              </div>
-              
-              <Button 
-                variant="primary"
-                loading={saving}
-                onClick={() => handleSaveSettings('privacy', settings.privacy)}
-              >
-                Actualizar Configuración
               </Button>
             </div>
           </Card>
