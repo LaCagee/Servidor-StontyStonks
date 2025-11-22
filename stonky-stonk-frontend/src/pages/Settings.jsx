@@ -152,34 +152,49 @@ export default function Settings() {
   const handleExportData = async () => {
     try {
       console.log('📥 Iniciando exportación de datos...');
+      console.log('🔑 Token:', localStorage.getItem('token') ? 'Presente' : 'Ausente');
+      console.log('🌐 URL:', `${API_BASE_URL}/transactions?limit=10000`);
 
       // traer todas las transacciones del usuario
       const response = await axios.get(`${API_BASE_URL}/transactions?limit=10000`, axiosConfig);
+
+      console.log('📡 Respuesta recibida:', response.status);
+      console.log('📦 Datos:', response.data);
+
       const transactions = response.data.transactions || [];
 
       console.log(`✅ ${transactions.length} transacciones encontradas`);
 
       if (transactions.length === 0) {
-        alert('No hay datos para exportar');
+        alert('⚠️ No hay transacciones para exportar.\n\nCrea algunas transacciones primero.');
         return;
       }
 
       // crear CSV con los datos (con BOM para UTF-8)
       const BOM = '\uFEFF';
       const csvHeaders = ['Fecha', 'Tipo', 'Categoría', 'Descripción', 'Monto'];
-      const csvRows = transactions.map(t => [
-        new Date(t.date).toLocaleDateString('es-CL'),
-        t.type === 'income' ? 'Ingreso' : 'Gasto',
-        t.category?.name || t.categoryId || 'Sin categoría',
-        (t.description || '').replace(/"/g, '""'), // Escapar comillas
-        parseFloat(t.amount || 0).toFixed(2)
-      ]);
+      const csvRows = transactions.map(t => {
+        try {
+          return [
+            new Date(t.date).toLocaleDateString('es-CL'),
+            t.type === 'income' ? 'Ingreso' : 'Gasto',
+            t.category?.name || 'Sin categoría',
+            (t.description || '').replace(/"/g, '""'), // Escapar comillas
+            parseFloat(t.amount || 0).toFixed(2)
+          ];
+        } catch (err) {
+          console.error('Error procesando transacción:', t, err);
+          return ['Error', 'Error', 'Error', 'Error', '0'];
+        }
+      });
 
       // convertir a string CSV
       const csvContent = BOM + [
         csvHeaders.join(','),
         ...csvRows.map(row => row.map(cell => `"${cell}"`).join(','))
       ].join('\n');
+
+      console.log('📝 CSV generado, tamaño:', csvContent.length, 'caracteres');
 
       // crear blob y descargar
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -191,12 +206,25 @@ export default function Settings() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(url);
 
-      console.log('✅ Descarga iniciada');
+      console.log('✅ Descarga iniciada correctamente');
       alert('✅ Datos exportados exitosamente');
     } catch (error) {
-      console.error('❌ Error al exportar datos:', error);
-      alert(`❌ Error al exportar datos: ${error.message}\n\nRevisa la consola para más detalles.`);
+      console.error('❌ Error completo:', error);
+      console.error('❌ Respuesta del servidor:', error.response?.data);
+      console.error('❌ Status:', error.response?.status);
+
+      let errorMessage = 'Error desconocido';
+      if (error.response) {
+        errorMessage = `Error ${error.response.status}: ${error.response.data?.error || error.response.statusText}`;
+      } else if (error.request) {
+        errorMessage = 'No se recibió respuesta del servidor';
+      } else {
+        errorMessage = error.message;
+      }
+
+      alert(`❌ Error al exportar datos:\n\n${errorMessage}\n\nRevisa la consola del navegador (F12) para más detalles.`);
     }
   };
 

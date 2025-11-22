@@ -17,9 +17,10 @@ const dashboardRoutes = require('./dashboardRoutes');
 const suggestionRoutes = require('./SuggestionRoutes');
 const goalRoutes = require('./goalRoutes');  
 const budgetRoutes = require('./Budgetroutes');
-const analysisRoutes = require('./analysisRoutes');  
-const reportsRoutes = require('./reportsRoutes');  
-const settingsRoutes = require('./settingsRoutes');  
+const analysisRoutes = require('./analysisRoutes');
+const reportsRoutes = require('./reportsRoutes');
+const settingsRoutes = require('./settingsRoutes');
+const notificationsRoutes = require('./notificationsRoutes');  
 
 
 // Usar rutas
@@ -31,9 +32,10 @@ router.use('/dashboard', dashboardRoutes);
 router.use('/suggestions', suggestionRoutes);
 router.use('/goals', goalRoutes);  
 router.use('/budgets', budgetRoutes);
-router.use('/analysis', analysisRoutes);  
-router.use('/reports', reportsRoutes);  
-router.use('/settings', settingsRoutes);  
+router.use('/analysis', analysisRoutes);
+router.use('/reports', reportsRoutes);
+router.use('/settings', settingsRoutes);
+router.use('/notifications', notificationsRoutes);  
 
 // Ruta de prueba
 router.get('/', (req, res) => {
@@ -50,7 +52,8 @@ router.get('/', (req, res) => {
       budgets: '/api/budgets',
       analysis: '/api/analysis',
       reports: '/api/reports',
-      settings: '/api/settings'  
+      settings: '/api/settings',
+      notifications: '/api/notifications'
     }
   });
 });
