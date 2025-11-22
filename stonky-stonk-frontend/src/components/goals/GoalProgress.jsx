@@ -105,27 +105,35 @@ export default function GoalProgress({
   };
 
   return (
-    <Card className="goal-card">
+    <Card className="goal-card-modern">
       {/* Header */}
-      <div className="goal-header">
-        <div className="goal-title-section">
-          <h3 className="goal-title">{goal.name}</h3>
-          <span className={`goal-badge ${getStatusBadgeClass()}`}>
-            {getStatusLabel()}
-          </span>
+      <div className="goal-header-modern">
+        <div className="goal-title-section-modern">
+          <div className="goal-icon-wrapper">
+            {goal.status === 'completed' && <PartyPopper className="goal-status-icon completed" />}
+            {goal.status === 'active' && <Target className="goal-status-icon active" />}
+            {goal.status === 'paused' && <Pause className="goal-status-icon paused" />}
+            {goal.status === 'cancelled' && <XCircle className="goal-status-icon cancelled" />}
+          </div>
+          <div className="goal-title-info">
+            <h3 className="goal-title">{goal.name}</h3>
+            <span className={`goal-badge-modern ${getStatusBadgeClass()}`}>
+              {getStatusLabel()}
+            </span>
+          </div>
         </div>
-        
+
         {!readonly && (
-          <div className="goal-actions">
+          <div className="goal-actions-header">
             <button
-              className="action-btn"
+              className="action-btn-modern"
               onClick={() => setIsEditing(!isEditing)}
               title="Editar"
             >
               <Edit2 size={18} />
             </button>
             <button
-              className="action-btn delete"
+              className="action-btn-modern delete"
               onClick={() => {
                 if (window.confirm('¿Eliminar esta meta?')) {
                   onDelete(goal.id);
@@ -200,51 +208,77 @@ export default function GoalProgress({
           <p className="goal-description">{goal.description}</p>
         )}
 
-        {/* Barra de progreso */}
-        <div className="progress-section">
-          <div className="progress-header">
-            <span className="progress-label">Progreso</span>
-            <span className="progress-percent">{Math.round(percentage)}%</span>
+        {/* Barra de progreso moderna */}
+        <div className="progress-section-modern">
+          <div className="progress-stats">
+            <div className="stat-item">
+              <span className="stat-label">Ahorrado</span>
+              <span className="stat-value current">{formatCLP(currentAmount)}</span>
+            </div>
+            <div className="stat-separator">/</div>
+            <div className="stat-item">
+              <span className="stat-label">Meta</span>
+              <span className="stat-value target">{formatCLP(targetAmount)}</span>
+            </div>
           </div>
-          <div className="progress-bar">
-            <div
-              className="progress-fill"
-              style={{ width: `${Math.min(percentage, 100)}%` }}
-            ></div>
+
+          <div className="progress-bar-container">
+            <div className="progress-bar-modern">
+              <div
+                className="progress-fill-modern"
+                style={{
+                  width: `${Math.min(percentage, 100)}%`,
+                  background: percentage >= 100
+                    ? 'linear-gradient(90deg, #10b981, #059669)'
+                    : percentage >= 75
+                    ? 'linear-gradient(90deg, #3b82f6, #2563eb)'
+                    : percentage >= 50
+                    ? 'linear-gradient(90deg, #f59e0b, #d97706)'
+                    : 'linear-gradient(90deg, #6366f1, #4f46e5)'
+                }}
+              >
+                <div className="progress-shine"></div>
+              </div>
+            </div>
+            <span className="progress-percent-modern">{Math.round(percentage)}%</span>
           </div>
-          <div className="progress-info">
-            <span className="current-amount">{formatCLP(currentAmount)}</span>
-            <span className="target-amount">{formatCLP(targetAmount)}</span>
-          </div>
+
+          {/* Información de dinero restante */}
+          {goal.status !== 'completed' && (
+            <div className="remaining-info-modern">
+              <div className="remaining-card">
+                <span className="remaining-label">Falta por ahorrar</span>
+                <span className="remaining-amount">{formatCLP(remaining)}</span>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Información de dinero restante */}
-        {goal.status !== 'completed' && (
-          <div className="remaining-info">
-            <p className="remaining-label">Falta por ahorrar:</p>
-            <p className="remaining-amount">{formatCLP(remaining)}</p>
-          </div>
-        )}
-
-        {/* Información de fecha */}
+        {/* Información de fecha moderna */}
         {goal.deadline && (
-          <div className="deadline-info">
-            <p className="deadline-label">Fecha límite: {goal.deadline}</p>
-            {daysRemaining !== null && (
-              <p className={`days-remaining ${isOverdue ? 'overdue' : ''} ${isNearDeadline ? 'warning' : ''}`}>
-                {isOverdue ? (
-                  <span className="flex items-center gap-1">
-                    <AlertTriangle className="w-4 h-4" />
-                    Vencida hace {Math.abs(daysRemaining)} días
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1">
-                    <Calendar className="w-4 h-4" />
-                    {daysRemaining} días restantes
-                  </span>
-                )}
-              </p>
-            )}
+          <div className="deadline-info-modern">
+            <div className="deadline-card">
+              <Calendar className="deadline-icon" />
+              <div className="deadline-content">
+                <span className="deadline-label">Fecha límite</span>
+                <span className="deadline-date">{goal.deadline}</span>
+              </div>
+              {daysRemaining !== null && (
+                <div className={`days-badge ${isOverdue ? 'overdue' : ''} ${isNearDeadline ? 'warning' : ''}`}>
+                  {isOverdue ? (
+                    <span className="flex items-center gap-1">
+                      <AlertTriangle className="w-4 h-4" />
+                      Vencida
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-4 h-4" />
+                      {daysRemaining}d
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -350,20 +384,21 @@ export default function GoalProgress({
         )}
 
         {goal.status === 'completed' && (
-          <div className="completed-message">
-            <span className="flex items-center gap-2 justify-center">
-              <CheckCircle className="w-5 h-5" />
-              ¡Meta completada!
-            </span>
+          <div className="completed-message-modern">
+            <div className="celebration-icon">
+              <PartyPopper className="w-8 h-8" />
+            </div>
+            <div className="celebration-text">
+              <h4>¡Meta Completada!</h4>
+              <p>Has alcanzado tu objetivo de ahorro</p>
+            </div>
           </div>
         )}
 
         {goal.status === 'cancelled' && (
-          <div className="cancelled-message">
-            <span className="flex items-center gap-2 justify-center">
-              <XCircle className="w-5 h-5" />
-              Meta cancelada
-            </span>
+          <div className="cancelled-message-modern">
+            <XCircle className="w-6 h-6" />
+            <span>Meta cancelada</span>
           </div>
         )}
       </div>

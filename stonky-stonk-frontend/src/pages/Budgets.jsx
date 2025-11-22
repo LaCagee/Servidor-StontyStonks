@@ -4,7 +4,7 @@ import MainLayout from '../components/layout/MainLayout';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import BudgetForm from '../components/budgets/BudgetForm';
-import { Plus, PieChart, AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react';
+import { Plus, PieChart, AlertTriangle, CheckCircle, RefreshCw, DollarSign, TrendingDown, Zap } from 'lucide-react';
 import { formatCLP, formatPercentage } from '../utils/currency';
 
 const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'https://stonky-backend.blackdune-587dd75b.westus3.azurecontainerapps.io'}/api`;
@@ -198,30 +198,47 @@ export default function Budgets() {
           </div>
         )}
 
-        <div className="budgets-summary">
-          <Card className="summary-card">
-            <h3>Resumen Mensual</h3>
-            <div className="summary-stats">
-              <div className="summary-stat">
-                <span className="stat-label">Total Presupuestado</span>
-                <span className="stat-value">
-                  {formatCLP(totalAllocated)}
-                </span>
+        {/* Métricas Principales Mejoradas */}
+        <div className="analysis-metrics">
+          <Card variant="stonky-primary" className="metric-card metric-card-primary">
+            <div className="metric-content">
+              <div className="metric-icon-container">
+                <DollarSign className="metric-icon" />
               </div>
-              <div className="summary-stat">
-                <span className="stat-label">Total Gastado</span>
-                <span className="stat-value">
-                  {formatCLP(totalSpent)}
-                </span>
+              <div className="metric-info">
+                <span className="metric-label">Total Presupuestado</span>
+                <span className="metric-value">{formatCLP(totalAllocated)}</span>
+                <span className="metric-description">Límite mensual asignado</span>
               </div>
-              <div className="summary-stat">
-                <span className={`stat-value ${totalRemaining >= 0 ? 'positive' : 'negative'}`}>
-                  {formatCLP(Math.abs(totalRemaining))}
-                </span>
-                <span className="stat-label">
-                  {totalRemaining >= 0 ? 'Restante' : 'Sobrepasado'}
-                </span>
+              <div className="metric-badge">{budgets.length} categorías</div>
+            </div>
+          </Card>
+
+          <Card variant="stonky-warning" className="metric-card metric-card-warning">
+            <div className="metric-content">
+              <div className="metric-icon-container">
+                <TrendingDown className="metric-icon" />
               </div>
+              <div className="metric-info">
+                <span className="metric-label">Total Gastado</span>
+                <span className="metric-value">{formatCLP(totalSpent)}</span>
+                <span className="metric-description">Consumo actual del mes</span>
+              </div>
+              <div className="metric-badge">{totalAllocated > 0 ? ((totalSpent / totalAllocated) * 100).toFixed(1) + '%' : '0%'}</div>
+            </div>
+          </Card>
+
+          <Card variant={totalRemaining >= 0 ? "stonky-success" : "stonky-danger"} className={`metric-card ${totalRemaining >= 0 ? 'metric-card-success' : 'metric-card-danger'}`}>
+            <div className="metric-content">
+              <div className="metric-icon-container">
+                {totalRemaining >= 0 ? <CheckCircle className="metric-icon" /> : <AlertTriangle className="metric-icon" />}
+              </div>
+              <div className="metric-info">
+                <span className="metric-label">{totalRemaining >= 0 ? 'Disponible' : 'Sobrepasado'}</span>
+                <span className="metric-value">{formatCLP(Math.abs(totalRemaining))}</span>
+                <span className="metric-description">{totalRemaining >= 0 ? 'Puedes gastar más' : 'Exceso en presupuesto'}</span>
+              </div>
+              <div className="metric-badge">{totalRemaining >= 0 ? 'Bajo control' : 'Atención'}</div>
             </div>
           </Card>
         </div>
@@ -229,8 +246,8 @@ export default function Budgets() {
         <Card title="Tus Presupuestos">
           {loading ? (
             <div className="loading-state">
-              <div className="loading-spinner"></div>
-              <p>Cargando presupuestos...</p>
+              <Zap className="loading-icon" />
+              <p>Cargando tus presupuestos...</p>
             </div>
           ) : budgets.length === 0 ? (
             <div className="empty-state">
@@ -244,50 +261,74 @@ export default function Budgets() {
             </div>
           ) : (
             <div className="budgets-list">
-              {budgets.map(budget => {
+              {budgets.map((budget, index) => {
                 // CORRECCIÓN: Usar spent.currentSpent en lugar de spentAmount
                 const spentAmount = budget.spent?.currentSpent || 0;
                 const monthlyLimit = budget.monthlyLimit || 1;
                 const status = getBudgetStatus(budget);
                 const percentage = (spentAmount / monthlyLimit) * 100;
-                
+                const remaining = monthlyLimit - spentAmount;
+
                 return (
-                  <div key={budget.id} className="budget-item">
-                    <div className="budget-header">
-                      <div className="budget-category">
-                        <span className="category-name">{budget.category?.name || 'Sin categoría'}</span>
-                        <span className={`status-indicator ${status}`}>
-                          {status === 'over-budget' && <AlertTriangle className="icon-xs" />}
-                          {status === 'warning' && <AlertTriangle className="icon-xs" />}
-                          {status === 'good' && <CheckCircle className="icon-xs" />}
-                          {status === 'over-budget' && 'Excedido'}
-                          {status === 'warning' && 'Alerta'}
-                          {status === 'good' && 'Bien'}
-                        </span>
+                  <div
+                    key={budget.id}
+                    className={`budget-item-modern ${status}`}
+                    style={{ animationDelay: `${index * 0.1}s` }}
+                  >
+                    <div className="budget-header-modern">
+                      <div className="budget-category-section">
+                        <div className="category-icon-wrapper">
+                          {status === 'over-budget' && <AlertTriangle className="category-icon error" />}
+                          {status === 'warning' && <AlertTriangle className="category-icon warning" />}
+                          {status === 'good' && <CheckCircle className="category-icon success" />}
+                        </div>
+                        <div className="category-info">
+                          <h4 className="category-name">{budget.category?.name || 'Sin categoría'}</h4>
+                          {budget.description && (
+                            <p className="budget-description-small">{budget.description}</p>
+                          )}
+                        </div>
                       </div>
-                      <div className="budget-amounts">
-                        <span className="spent">{formatCLP(spentAmount)}</span>
-                        <span className="separator">/</span>
-                        <span className="allocated">{formatCLP(monthlyLimit)}</span>
+                      <div className="budget-status-badge" data-status={status}>
+                        {status === 'over-budget' && 'Excedido'}
+                        {status === 'warning' && 'Alerta'}
+                        {status === 'good' && 'Bajo Control'}
                       </div>
                     </div>
-                    
-                    <div className="budget-progress">
-                      <div className="progress-bar">
-                        <div 
-                          className={`progress-fill ${status}`}
+
+                    <div className="budget-amounts-section">
+                      <div className="amount-item">
+                        <span className="amount-label">Gastado</span>
+                        <span className="amount-value spent">{formatCLP(spentAmount)}</span>
+                      </div>
+                      <div className="amount-separator">/</div>
+                      <div className="amount-item">
+                        <span className="amount-label">Límite</span>
+                        <span className="amount-value limit">{formatCLP(monthlyLimit)}</span>
+                      </div>
+                      <div className="amount-item remaining">
+                        <span className="amount-label">Restante</span>
+                        <span className={`amount-value ${remaining >= 0 ? 'positive' : 'negative'}`}>
+                          {formatCLP(Math.abs(remaining))}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="budget-progress-modern">
+                      <div className="progress-header">
+                        <span className="progress-label">Progreso</span>
+                        <span className="progress-percentage">{percentage.toFixed(1)}%</span>
+                      </div>
+                      <div className="progress-bar-modern">
+                        <div
+                          className={`progress-fill-modern ${status}`}
                           style={{ width: `${Math.min(percentage, 100)}%` }}
                         ></div>
                       </div>
-                      <span className="progress-percentage">{percentage.toFixed(0)}%</span>
                     </div>
 
-                    {budget.description && (
-                      <p className="budget-description">{budget.description}</p>
-                    )}
-                    
-                    <div className="budget-actions">
-                      <Button variant="ghost" size="sm" onClick={() => handleEdit(budget)}>
+                    <div className="budget-actions-modern">
+                      <Button variant="secondary" size="sm" onClick={() => handleEdit(budget)}>
                         Editar
                       </Button>
                       <Button variant="ghost" size="sm" onClick={() => handleDelete(budget.id)}>
