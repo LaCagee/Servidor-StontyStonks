@@ -280,7 +280,8 @@ exports.getProjections = async (req, res) => {
     // Calcular promedios mensuales
     const monthlyData = {};
     historicalTransactions.forEach(transaction => {
-      const monthKey = `${transaction.date.getFullYear()}-${String(transaction.date.getMonth() + 1).padStart(2, '0')}`;
+      const date = new Date(transaction.date);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       if (!monthlyData[monthKey]) {
         monthlyData[monthKey] = { income: 0, expense: 0 };
       }

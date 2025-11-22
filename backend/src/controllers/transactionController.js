@@ -112,6 +112,9 @@ exports.getAllTransactions = async (req, res) => {
       limit = 50
     } = req.query;
 
+    // Validar y limitar el parámetro limit (máximo 10000 para export)
+    const parsedLimit = Math.min(parseInt(limit) || 50, 10000);
+
     // Construir filtros dinámicamente
     const where = {
       userId,
@@ -148,7 +151,7 @@ exports.getAllTransactions = async (req, res) => {
     }
 
     // Calcular offset para paginación
-    const offset = (page - 1) * limit;
+    const offset = (page - 1) * parsedLimit;
 
     // ========== CORREGIDO: Incluir Goal en la consulta ==========
     const { count, rows: transactions } = await Transaction.findAndCountAll({
@@ -166,19 +169,19 @@ exports.getAllTransactions = async (req, res) => {
         }
       ],
       order: [['date', 'DESC'], ['createdAt', 'DESC']],
-      limit: parseInt(limit),
+      limit: parsedLimit,
       offset: parseInt(offset)
     });
 
     // Calcular páginas totales
-    const totalPages = Math.ceil(count / limit);
+    const totalPages = Math.ceil(count / parsedLimit);
 
     return res.status(200).json({
       transactions,
       pagination: {
         total: count,
         page: parseInt(page),
-        limit: parseInt(limit),
+        limit: parsedLimit,
         totalPages,
         hasMore: page < totalPages
       }
