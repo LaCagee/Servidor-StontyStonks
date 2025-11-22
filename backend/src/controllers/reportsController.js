@@ -131,6 +131,7 @@ exports.getReportSummary = async (req, res) => {
       .sort((a, b) => b.amount - a.amount);
 
     // Tendencia mensual (últimos 3 meses o según periodo)
+    // CORREGIDO: Consultar BD para cada mes en lugar de filtrar currentTransactions
     const monthlyTrend = [];
     const monthsToShow = period === 'year' ? 12 : 3;
 
@@ -139,9 +140,15 @@ exports.getReportSummary = async (req, res) => {
       const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
       const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
 
-      const monthTransactions = currentTransactions.filter(t => {
-        const tDate = new Date(t.date);
-        return tDate >= monthStart && tDate <= monthEnd;
+      // CORRECCIÓN: Consultar BD directamente para cada mes
+      const monthTransactions = await Transaction.findAll({
+        where: {
+          userId,
+          isActive: true,
+          date: {
+            [Op.between]: [monthStart, monthEnd]
+          }
+        }
       });
 
       const monthIncome = monthTransactions

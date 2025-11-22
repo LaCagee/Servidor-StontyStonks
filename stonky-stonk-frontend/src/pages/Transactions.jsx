@@ -313,14 +313,14 @@ export default function Transactions() {
     alert('Función de importación en desarrollo. Próximamente podrás importar transacciones desde CSV.');
   };
 
-  // Calcular totales
+  // Calcular totales (parseFloat porque amount viene como string de la BD)
   const totalIncome = transactions
     .filter(t => t.type === 'income')
-    .reduce((sum, t) => sum + (t.amount || 0), 0);
+    .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
 
   const totalExpenses = transactions
     .filter(t => t.type === 'expense')
-    .reduce((sum, t) => sum + (t.amount || 0), 0);
+    .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
 
   const balance = totalIncome - totalExpenses;
 
