@@ -13,6 +13,7 @@ const Category = require('./Category');
 const Transaction = require('./Transaction');
 const Goal = require('./Goal');
 const Budget = require('./Budget');
+const Settings = require('./Settings');
 
 // ============================================
 // DEFINIR RELACIONES (FOREIGN KEYS)
@@ -114,6 +115,18 @@ Budget.belongsTo(Category, {
   as: 'category'
 });
 
+// 9. USER - SETTINGS (1:1) ← NUEVA RELACIÓN
+User.hasOne(Settings, {
+  foreignKey: 'userId',
+  as: 'settings',
+  onDelete: 'CASCADE'
+});
+
+Settings.belongsTo(User, {
+  foreignKey: 'userId',
+  as: 'user'
+});
+
 // ============================================
 // EXPORTAR MODELOS Y SEQUELIZE
 // ============================================
@@ -124,5 +137,6 @@ module.exports = {
   Category,
   Transaction,
   Goal,
-  Budget
+  Budget,
+  Settings
 };
