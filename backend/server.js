@@ -16,7 +16,7 @@ async function startServer() {
     if (process.env.NODE_ENV === 'development') {
       // IMPORTANTE: alter actualiza las tablas sin perder datos
       // force: true elimina y recrea (solo usar la primera vez)
-      await sequelize.sync({ alter: true }); // ✅ Ajusta tablas sin perder datos
+      await sequelize.sync({ force: true }); // ✅ Ajusta tablas sin perder datos
       // await sequelize.sync({ force: true }); // ⚠️ Solo usar si necesitas resetear TODO
 
       console.log('✅ Modelos sincronizados con la base de datos');

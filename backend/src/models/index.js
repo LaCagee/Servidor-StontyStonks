@@ -79,7 +79,7 @@ Goal.belongsTo(Category, {
   as: 'category'
 });
 
-// 6. GOAL - TRANSACTION (1:N) ← NUEVA RELACIÓN
+// 6. GOAL - TRANSACTION (1:N) 
 Goal.hasMany(Transaction, {
   foreignKey: 'goalId',
   as: 'transactions',
@@ -115,7 +115,7 @@ Budget.belongsTo(Category, {
   as: 'category'
 });
 
-// 9. USER - SETTINGS (1:1) ← NUEVA RELACIÓN
+// 9. USER - SETTINGS (1:1) 
 User.hasOne(Settings, {
   foreignKey: 'userId',
   as: 'settings',

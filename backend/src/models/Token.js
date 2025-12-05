@@ -14,7 +14,7 @@
    └────────────────────────────────────┘
    ↓
 4. Usuario hace peticiones con el token
-   Middleware verifica: token.isValid() ✅
+   Middleware verifica: token.isValid() 
    ↓
 5a. Usuario hace logout:
     token.revoke() → revoked_at = NOW()

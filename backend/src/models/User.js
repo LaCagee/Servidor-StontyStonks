@@ -117,7 +117,7 @@ const User = sequelize.define('User', {
     /* Ejemplo de uso: (al momento de crear al usuario se le pasa la contraseña en texto plano y
         este hook la hashea sin que nosotros tengamos que hacerlo manualmente)
           await User.create({ email, password: '12345678' });
-             //✅ Sequelize hashea automáticamente antes de guardar
+             //Sequelize hashea automáticamente antes de guardar
              //En BD queda: $2b$12$asfdasdfasdfasdfasdfasdfasdf...
     */
 
@@ -146,7 +146,7 @@ User.prototype.comparePassword = async function (candidatePassword) {
 // Método para obtener usuario sin contraseña
 User.prototype.toJSON = function () {
   const values = { ...this.get() };
-  delete values.password;  // Nunca devolver la contraseña en JSON 
+  delete values.password;  // Nunca devolver la contraseña en respuestas 
   return values;
 };
 /* Ejemplo de uso:

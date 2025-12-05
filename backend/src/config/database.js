@@ -19,7 +19,7 @@ const sequelize = new Sequelize(
       idle: 10000
     },
     timezone: '-03:00',
-    dialectOptions: isProduction
+    dialectOptions: true   // isProduction  lo deje en true para que siempre usemos SSL 
       ? {
           ssl: {
             require: true,
