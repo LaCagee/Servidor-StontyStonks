@@ -16,8 +16,8 @@ import autoTable from 'jspdf-autotable';
 const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'https://stonky-backend.blackdune-587dd75b.westus3.azurecontainerapps.io'}/api`;
 
 export default function Reports() {
-  // usar el contexto de configuraciones pa formatear con la moneda correcta
-  const { formatMoney, currency } = useSettings();
+  // usar el contexto de configuraciones pa formatear
+  const { formatMoney } = useSettings();
 
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -102,7 +102,7 @@ export default function Reports() {
         doc.setFontSize(10);
         doc.text(`Período: ${reportData.period?.startDate || 'N/A'} - ${reportData.period?.endDate || 'N/A'}`, 14, 30);
         doc.text(`Generado: ${new Date().toLocaleDateString('es-CL')}`, 14, 35);
-        doc.text(`Moneda: ${currency}`, 14, 40); // mostrar la moneda usada
+        doc.text(`Moneda: CLP`, 14, 40);
 
         // Línea separadora
         doc.setLineWidth(0.5);
@@ -179,7 +179,7 @@ export default function Reports() {
         console.log('💾 Guardando PDF...');
         doc.save(`reporte-stonky-${new Date().toISOString().split('T')[0]}.pdf`);
 
-        alert(`✅ Reporte PDF generado exitosamente en ${currency}`);
+        alert(`✅ Reporte PDF generado exitosamente en CLP`);
       }
     } catch (error) {
       console.error('❌ Error al generar PDF:', error);

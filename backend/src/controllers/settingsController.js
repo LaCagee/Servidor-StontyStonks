@@ -19,7 +19,6 @@ exports.getSettings = async (req, res) => {
     if (!settings) {
       settings = await Settings.create({
         userId,
-        currency: 'CLP',
         language: 'es',
         emailNotifications: true,
         pushNotifications: true,
@@ -34,7 +33,6 @@ exports.getSettings = async (req, res) => {
       success: true,
       settings: {
         profile: {
-          currency: settings.currency,
           language: settings.language
         },
         notifications: {
@@ -75,7 +73,6 @@ exports.updateSettings = async (req, res) => {
     if (!settings) {
       settings = await Settings.create({
         userId,
-        currency: profile?.currency || 'CLP',
         language: profile?.language || 'es',
         emailNotifications: notifications?.email !== undefined ? notifications.email : true,
         pushNotifications: notifications?.push !== undefined ? notifications.push : true,
@@ -87,7 +84,6 @@ exports.updateSettings = async (req, res) => {
     } else {
       // actualizamos los campos que vienen en el request
       if (profile) {
-        if (profile.currency) settings.currency = profile.currency;
         if (profile.language) settings.language = profile.language;
       }
 
@@ -111,7 +107,6 @@ exports.updateSettings = async (req, res) => {
       message: 'Configuración actualizada exitosamente',
       settings: {
         profile: {
-          currency: settings.currency,
           language: settings.language
         },
         notifications: {
@@ -161,7 +156,6 @@ exports.updateSettingsSection = async (req, res) => {
     if (!settings) {
       settings = await Settings.create({
         userId,
-        currency: 'CLP',
         language: 'es',
         emailNotifications: true,
         pushNotifications: true,
@@ -175,7 +169,6 @@ exports.updateSettingsSection = async (req, res) => {
     // actualizar solo la sección especificada
     switch (section) {
       case 'profile':
-        if (data.currency) settings.currency = data.currency;
         if (data.language) settings.language = data.language;
         break;
 
@@ -199,7 +192,6 @@ exports.updateSettingsSection = async (req, res) => {
       message: `Sección '${section}' actualizada exitosamente`,
       settings: {
         profile: {
-          currency: settings.currency,
           language: settings.language
         },
         notifications: {
@@ -230,7 +222,6 @@ exports.createDefaultSettings = async (userId) => {
   try {
     const settings = await Settings.create({
       userId,
-      currency: 'CLP',
       language: 'es',
       emailNotifications: true,
       pushNotifications: true,
