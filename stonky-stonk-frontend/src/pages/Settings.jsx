@@ -344,8 +344,8 @@ export default function Settings() {
                   <span className="setting-description">Resumen mensual de tus finanzas</span>
                 </div>
                 <label className="toggle-switch">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     checked={settings.notifications.monthlyReports}
                     onChange={(e) => setSettings(prev => ({
                       ...prev,
@@ -355,8 +355,28 @@ export default function Settings() {
                   <span className="toggle-slider"></span>
                 </label>
               </div>
-              
-              <Button 
+
+              <div className="setting-item">
+                <div className="setting-info">
+                  <span className="setting-label">Alertas de Presupuesto</span>
+                  <span className="setting-description">Notificaciones cuando superas tu presupuesto</span>
+                </div>
+                <label className="toggle-switch">
+                  <input
+                    type="checkbox"
+                    checked={settings.notifications.budgetAlerts}
+                    onChange={(e) => setSettings(prev => ({
+                      ...prev,
+                      notifications: { ...prev.notifications, budgetAlerts: e.target.checked }
+                    }))}
+                  />
+                  <span className="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <div style={{ marginTop: '1.5rem' }}>
+              <Button
                 variant="primary"
                 loading={saving}
                 onClick={() => handleSaveSettings('notifications', settings.notifications)}
