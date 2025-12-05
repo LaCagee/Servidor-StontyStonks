@@ -19,7 +19,6 @@ export default function Settings() {
     profile: {
       name: '',
       email: '',
-      currency: 'CLP',
       language: 'es'
     },
     notifications: {
@@ -66,7 +65,6 @@ export default function Settings() {
         profile: {
           name: userData.name || 'Usuario',
           email: userData.email || 'usuario@ejemplo.com',
-          currency: globalSettings.profile.currency,
           language: globalSettings.profile.language
         },
         notifications: globalSettings.notifications
@@ -133,9 +131,8 @@ export default function Settings() {
         }
       }
 
-      // guardar preferencias (currency y language) en settings
+      // guardar preferencias (language) en settings
       await handleSaveSettings('profile', {
-        currency: settings.profile.currency,
         language: settings.profile.language
       });
 
@@ -278,35 +275,18 @@ export default function Settings() {
                 }))}
               />
               
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Moneda</label>
-                  <select 
-                    value={settings.profile.currency}
-                    onChange={(e) => setSettings(prev => ({
-                      ...prev,
-                      profile: { ...prev.profile, currency: e.target.value }
-                    }))}
-                  >
-                    <option value="CLP">Peso Chileno (CLP)</option>
-                    <option value="USD">Dólar Americano (USD)</option>
-                    <option value="EUR">Euro (EUR)</option>
-                  </select>
-                </div>
-                
-                <div className="form-group">
-                  <label>Idioma</label>
-                  <select 
-                    value={settings.profile.language}
-                    onChange={(e) => setSettings(prev => ({
-                      ...prev,
-                      profile: { ...prev.profile, language: e.target.value }
-                    }))}
-                  >
-                    <option value="es">Español</option>
-                    <option value="en">English</option>
-                  </select>
-                </div>
+              <div className="form-group">
+                <label>Idioma</label>
+                <select
+                  value={settings.profile.language}
+                  onChange={(e) => setSettings(prev => ({
+                    ...prev,
+                    profile: { ...prev.profile, language: e.target.value }
+                  }))}
+                >
+                  <option value="es">Español</option>
+                  <option value="en">English</option>
+                </select>
               </div>
 
               <Button
@@ -364,8 +344,8 @@ export default function Settings() {
                   <span className="setting-description">Resumen mensual de tus finanzas</span>
                 </div>
                 <label className="toggle-switch">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     checked={settings.notifications.monthlyReports}
                     onChange={(e) => setSettings(prev => ({
                       ...prev,
@@ -375,8 +355,28 @@ export default function Settings() {
                   <span className="toggle-slider"></span>
                 </label>
               </div>
-              
-              <Button 
+
+              <div className="setting-item">
+                <div className="setting-info">
+                  <span className="setting-label">Alertas de Presupuesto</span>
+                  <span className="setting-description">Notificaciones cuando superas tu presupuesto</span>
+                </div>
+                <label className="toggle-switch">
+                  <input
+                    type="checkbox"
+                    checked={settings.notifications.budgetAlerts}
+                    onChange={(e) => setSettings(prev => ({
+                      ...prev,
+                      notifications: { ...prev.notifications, budgetAlerts: e.target.checked }
+                    }))}
+                  />
+                  <span className="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <div style={{ marginTop: '1.5rem' }}>
+              <Button
                 variant="primary"
                 loading={saving}
                 onClick={() => handleSaveSettings('notifications', settings.notifications)}

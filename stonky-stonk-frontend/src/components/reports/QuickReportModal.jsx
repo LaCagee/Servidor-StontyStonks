@@ -8,7 +8,7 @@ import autoTable from 'jspdf-autotable';
 const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
 export default function QuickReportModal({ reportType, data, onClose }) {
-  const { formatMoney, currency } = useSettings();
+  const { formatMoney } = useSettings();
 
   if (!data) return null;
 
@@ -24,7 +24,7 @@ export default function QuickReportModal({ reportType, data, onClose }) {
       doc.setFontSize(10);
       doc.text(data.description, 14, 30);
       doc.text(`Generado: ${new Date().toLocaleDateString('es-CL')}`, 14, 35);
-      doc.text(`Moneda: ${currency}`, 14, 40);
+      doc.text(`Moneda: CLP`, 14, 40);
 
       // Línea separadora
       doc.setLineWidth(0.5);

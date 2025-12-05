@@ -36,24 +36,72 @@ export default function GoalProgress({
   const isNearDeadline = goal.isNearDeadline || false;
 
   const handleSaveEdit = async () => {
+    // Validaciones
+    if (!editName || editName.trim() === '') {
+      alert('❌ El nombre de la meta es obligatorio');
+      return;
+    }
+
+    if (editName.trim().length < 3) {
+      alert('❌ El nombre debe tener al menos 3 caracteres');
+      return;
+    }
+
+    const amount = parseFloat(editTarget);
+    if (isNaN(amount) || amount <= 0) {
+      alert('❌ El monto objetivo debe ser mayor a $0');
+      return;
+    }
+
+    if (amount > 1000000000) {
+      alert('❌ El monto no puede superar $1.000.000.000');
+      return;
+    }
+
+    // Validar fecha límite si se proporciona
+    if (editDeadline) {
+      const today = new Date().toISOString().split('T')[0];
+      if (editDeadline < today) {
+        alert('❌ La fecha límite no puede ser en el pasado');
+        return;
+      }
+    }
+
     await onUpdate(goal.id, {
-      name: editName,
-      targetAmount: parseFloat(editTarget),
+      name: editName.trim(),
+      targetAmount: amount,
       deadline: editDeadline || null,
-      description: editDescription,
+      description: editDescription.trim(),
     });
     setIsEditing(false);
   };
 
   const handleAddContribution = async (e) => {
     e.preventDefault();
-    
-    if (!contributionAmount || parseFloat(contributionAmount) <= 0) {
-      alert('Ingresa un monto válido');
+
+    if (!contributionAmount || contributionAmount.trim() === '') {
+      alert('❌ Por favor ingresa un monto');
       return;
     }
 
-    await onAddContribution(goal.id, parseFloat(contributionAmount), goal.categoryId);
+    const amount = parseFloat(contributionAmount);
+
+    if (isNaN(amount)) {
+      alert('❌ El monto debe ser un número válido');
+      return;
+    }
+
+    if (amount <= 0) {
+      alert('❌ El monto debe ser mayor a $0');
+      return;
+    }
+
+    if (amount > 100000000) {
+      alert('❌ El monto no puede superar $100.000.000');
+      return;
+    }
+
+    await onAddContribution(goal.id, amount, goal.categoryId);
     setContributionAmount('');
     setShowContributionForm(false);
   };

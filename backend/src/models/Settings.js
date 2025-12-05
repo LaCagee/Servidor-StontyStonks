@@ -1,7 +1,7 @@
 // ============================================
 // MODELO: SETTINGS (Configuraciones del usuario)
 // ============================================
-// aca guardamos las preferencias de cada usuario como la moneda que usa,
+// aca guardamos las preferencias de cada usuario como idioma,
 // notificaciones, privacidad, etc.
 
 const { DataTypes } = require('sequelize');
@@ -31,19 +31,6 @@ const Settings = sequelize.define('Settings', {
   },
 
   // ==================== PREFERENCIAS DE PERFIL ====================
-
-  currency: {
-    type: DataTypes.STRING(3),
-    defaultValue: 'CLP',
-    allowNull: false,
-    validate: {
-      isIn: {
-        args: [['CLP', 'USD', 'EUR', 'ARS', 'MXN', 'BRL']],
-        msg: 'Moneda no soportada'
-      }
-    },
-    comment: 'Moneda preferida del usuario (CLP, USD, EUR, etc.)'
-  },
 
   language: {
     type: DataTypes.STRING(2),

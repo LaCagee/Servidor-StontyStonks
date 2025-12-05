@@ -2,11 +2,10 @@
 // CONTEXTO DE CONFIGURACIONES GLOBALES
 // ============================================
 // este contexto maneja las preferencias del usuario y provee funciones de formateo
-// que se adaptan automáticamente a la moneda configurada
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { formatCurrency, formatPercentage as formatPerc, getSupportedCurrencies } from '../utils/currencyMulti';
+import { formatCLP, formatPercentage as formatPerc, formatCLPCompact } from '../utils/currency';
 
 const SettingsContext = createContext(null);
 
@@ -16,7 +15,6 @@ export const SettingsProvider = ({ children }) => {
   // estado de configuraciones (viene del backend)
   const [settings, setSettings] = useState({
     profile: {
-      currency: 'CLP',
       language: 'es'
     },
     notifications: {
@@ -106,16 +104,15 @@ export const SettingsProvider = ({ children }) => {
     }
   }, [loadSettings]);
 
-  // ==================== FUNCIONES DE FORMATEO CON LA MONEDA DEL USUARIO ====================
+  // ==================== FUNCIONES DE FORMATEO EN CLP ====================
 
   /**
-   * Formatea un monto con la moneda del usuario
+   * Formatea un monto en CLP
    * @param {number} value - El valor a formatear
-   * @param {Object} options - Opciones de formateo
    * @returns {string} El valor formateado
    */
-  const formatMoney = (value, options = {}) => {
-    return formatCurrency(value, settings.profile.currency, options);
+  const formatMoney = (value) => {
+    return formatCLP(value);
   };
 
   /**
@@ -134,7 +131,7 @@ export const SettingsProvider = ({ children }) => {
    * @returns {string} El valor en formato compacto
    */
   const formatCompact = (value) => {
-    return formatCurrency(value, settings.profile.currency, { compact: true });
+    return formatCLPCompact(value);
   };
 
   /**
@@ -143,7 +140,7 @@ export const SettingsProvider = ({ children }) => {
    * @returns {string} El valor sin símbolo
    */
   const formatWithoutSymbol = (value) => {
-    return formatCurrency(value, settings.profile.currency, { showSymbol: false });
+    return formatCLP(value).replace('$', '').trim();
   };
 
   // valor del contexto
@@ -158,11 +155,8 @@ export const SettingsProvider = ({ children }) => {
     formatPercentage,
     formatCompact,
     formatWithoutSymbol,
-    // moneda actual
-    currency: settings.profile.currency,
-    language: settings.profile.language,
-    // utilidades
-    supportedCurrencies: getSupportedCurrencies()
+    // idioma
+    language: settings.profile.language
   };
 
   return (

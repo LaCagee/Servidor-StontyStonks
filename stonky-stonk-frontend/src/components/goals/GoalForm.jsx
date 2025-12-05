@@ -65,25 +65,51 @@ export default function GoalForm({ onSave, onCancel, goal = null }) {
 
     // Validaciones
     if (!formData.name || !formData.name.trim()) {
-      setError('El nombre de la meta es obligatorio');
+      setError('❌ El nombre de la meta es obligatorio');
       setLoading(false);
       return;
     }
 
-    if (!formData.targetAmount || parseFloat(formData.targetAmount) <= 0) {
-      setError('El monto debe ser mayor a 0');
+    if (formData.name.trim().length < 3) {
+      setError('❌ El nombre debe tener al menos 3 caracteres');
+      setLoading(false);
+      return;
+    }
+
+    if (!formData.targetAmount || isNaN(formData.targetAmount)) {
+      setError('❌ El monto objetivo es obligatorio y debe ser un número válido');
+      setLoading(false);
+      return;
+    }
+
+    if (parseFloat(formData.targetAmount) <= 0) {
+      setError('❌ El monto debe ser mayor a $0');
+      setLoading(false);
+      return;
+    }
+
+    if (parseFloat(formData.targetAmount) > 1000000000) {
+      setError('❌ El monto no puede superar $1.000.000.000');
       setLoading(false);
       return;
     }
 
     if (!formData.deadline) {
-      setError('La fecha límite es obligatoria');
+      setError('❌ La fecha límite es obligatoria');
+      setLoading(false);
+      return;
+    }
+
+    // Validar que la fecha límite no sea en el pasado
+    const today = new Date().toISOString().split('T')[0];
+    if (formData.deadline < today) {
+      setError('❌ La fecha límite no puede ser en el pasado');
       setLoading(false);
       return;
     }
 
     if (formData.description && formData.description.length > 300) {
-      setError('La descripción no puede exceder 300 caracteres');
+      setError('❌ La descripción no puede exceder 300 caracteres');
       setLoading(false);
       return;
     }
@@ -98,7 +124,7 @@ export default function GoalForm({ onSave, onCancel, goal = null }) {
       });
     } catch (err) {
       console.error('Error al guardar la meta:', err);
-      setError(err.response?.data?.error || 'Error al guardar la meta');
+      setError('❌ ' + (err.response?.data?.error || 'Error al guardar la meta. Por favor intenta nuevamente.'));
     } finally {
       setLoading(false);
     }
@@ -171,7 +197,7 @@ export default function GoalForm({ onSave, onCancel, goal = null }) {
               .filter(cat => cat.type === 'goal' || cat.type === 'expense') // Mostrar solo goals o expense
               .map(cat => (
                 <option key={cat.id} value={cat.id}>
-                  {cat.icon ? `${cat.icon} ` : ''}{cat.name}
+                  {cat.name}
                 </option>
               ))}
           </select>

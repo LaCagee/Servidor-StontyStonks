@@ -406,7 +406,7 @@ export default function Goals() {
                   goal={goal}
                   onUpdate={handleUpdateGoal}
                   onDelete={handleDeleteGoal}
-                  readonly={true}
+                  readonly={false}
                 />
               ))}
             </div>
