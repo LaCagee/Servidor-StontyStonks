@@ -168,33 +168,35 @@ export default function Settings() {
       }
 
       // crear CSV con los datos (con BOM para UTF-8)
-      const BOM = '\uFEFF';
-      const csvHeaders = ['Fecha', 'Tipo', 'Categoría', 'Descripción', 'Monto'];
+      // BOM (Byte Order Mark) para que Excel reconozca UTF-8 correctamente
+      const BOM = new Uint8Array([0xEF, 0xBB, 0xBF]);
+
+      const csvHeaders = ['Fecha', 'Tipo', 'Categoria', 'Descripcion', 'Monto'];
       const csvRows = transactions.map(t => {
         try {
           return [
             new Date(t.date).toLocaleDateString('es-CL'),
             t.type === 'income' ? 'Ingreso' : 'Gasto',
-            t.category?.name || 'Sin categoría',
+            t.category?.name || 'Sin categoria',
             (t.description || '').replace(/"/g, '""'), // Escapar comillas
             parseFloat(t.amount || 0).toFixed(2)
           ];
         } catch (err) {
-          console.error('Error procesando transacción:', t, err);
+          console.error('Error procesando transaccion:', t, err);
           return ['Error', 'Error', 'Error', 'Error', '0'];
         }
       });
 
       // convertir a string CSV
-      const csvContent = BOM + [
+      const csvContent = [
         csvHeaders.join(','),
         ...csvRows.map(row => row.map(cell => `"${cell}"`).join(','))
       ].join('\n');
 
       console.log('📝 CSV generado, tamaño:', csvContent.length, 'caracteres');
 
-      // crear blob y descargar
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      // crear blob con BOM UTF-8
+      const blob = new Blob([BOM, csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
       link.setAttribute('href', url);

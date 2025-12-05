@@ -5,7 +5,7 @@ import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 import TransactionForm from '../components/transactions/TransactionForm';
 import TransactionList from '../components/transactions/TransactionList';
-import { Plus, Download, Upload, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
+import { Plus, Download, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 import { formatCLP } from '../utils/currency';
 
 // Base URL - IMPORTANTE: incluir /api
@@ -309,10 +309,6 @@ export default function Transactions() {
     }
   };
 
-  const handleImport = () => {
-    alert('Función de importación en desarrollo. Próximamente podrás importar transacciones desde CSV.');
-  };
-
   // Calcular totales (parseFloat porque amount viene como string de la BD)
   const totalIncome = transactions
     .filter(t => t.type === 'income')
@@ -374,10 +370,6 @@ export default function Transactions() {
           </div>
 
           <div className="header-actions">
-            <Button variant="secondary" onClick={handleImport}>
-              <Upload className="icon-sm" />
-              Importar
-            </Button>
             <Button variant="secondary" onClick={handleExport}>
               <Download className="icon-sm" />
               Exportar
