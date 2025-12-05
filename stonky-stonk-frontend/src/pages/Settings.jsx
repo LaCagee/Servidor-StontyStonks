@@ -26,6 +26,10 @@ export default function Settings() {
       push: true,
       monthlyReports: true,
       budgetAlerts: true
+    },
+    privacy: {
+      dataSharing: false,
+      analytics: true
     }
   });
   const [loading, setLoading] = useState(true);
@@ -67,7 +71,11 @@ export default function Settings() {
           email: userData.email || 'usuario@ejemplo.com',
           language: globalSettings.profile.language
         },
-        notifications: globalSettings.notifications
+        notifications: globalSettings.notifications,
+        privacy: globalSettings.privacy || {
+          dataSharing: false,
+          analytics: true
+        }
       };
 
       setSettings(mergedSettings);
@@ -382,6 +390,57 @@ export default function Settings() {
                 variant="primary"
                 loading={saving}
                 onClick={() => handleSaveSettings('notifications', settings.notifications)}
+              >
+                Guardar Preferencias
+              </Button>
+            </div>
+          </Card>
+
+          {/* Privacidad */}
+          <Card title="Privacidad" icon={<Shield className="card-icon" />}>
+            <div className="settings-list">
+              <div className="setting-item">
+                <div className="setting-info">
+                  <span className="setting-label">Compartir Datos Anónimos</span>
+                  <span className="setting-description">Ayúdanos a mejorar compartiendo datos anónimos</span>
+                </div>
+                <label className="toggle-switch">
+                  <input
+                    type="checkbox"
+                    checked={settings.privacy.dataSharing}
+                    onChange={(e) => setSettings(prev => ({
+                      ...prev,
+                      privacy: { ...prev.privacy, dataSharing: e.target.checked }
+                    }))}
+                  />
+                  <span className="toggle-slider"></span>
+                </label>
+              </div>
+
+              <div className="setting-item">
+                <div className="setting-info">
+                  <span className="setting-label">Análisis Inteligente</span>
+                  <span className="setting-description">Habilitar análisis y recomendaciones personalizadas</span>
+                </div>
+                <label className="toggle-switch">
+                  <input
+                    type="checkbox"
+                    checked={settings.privacy.analytics}
+                    onChange={(e) => setSettings(prev => ({
+                      ...prev,
+                      privacy: { ...prev.privacy, analytics: e.target.checked }
+                    }))}
+                  />
+                  <span className="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <div style={{ marginTop: '1.5rem' }}>
+              <Button
+                variant="primary"
+                loading={saving}
+                onClick={() => handleSaveSettings('privacy', settings.privacy)}
               >
                 Guardar Preferencias
               </Button>
